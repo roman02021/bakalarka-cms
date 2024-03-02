@@ -9,8 +9,6 @@ import { ApiModule } from './api/api.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { FileModule } from './file/file.module';
-import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
 
 @Module({
   imports: [
@@ -23,14 +21,6 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
       password: 'test_password',
       database: 'test_db',
       synchronize: true,
-      autoLoadEntities: true,
-    }),
-    MikroOrmModule.forRoot({
-      entitiesTs: ['./entities/*.ts'],
-      dbName: 'test_db',
-      driver: PostgreSqlDriver,
-      user: 'test_user',
-      password: 'test_password',
       autoLoadEntities: true,
     }),
     AuthModule,
