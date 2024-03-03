@@ -1,39 +1,32 @@
 import {
-  Column,
-  CreateDateColumn,
+  DateType,
   Entity,
-  PrimaryGeneratedColumn,
+  PrimaryKey,
+  Property,
   Unique,
-  UpdateDateColumn,
-} from 'typeorm';
+} from '@mikro-orm/core';
 
-@Entity('users')
-@Unique(['email'])
+@Entity({ tableName: 'users' })
+@Unique({ properties: ['email'] })
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryKey()
   id: number;
 
-  @Column()
+  @Property()
   name: string;
 
-  @Column()
+  @Property()
   username: string;
 
-  @Column({ name: 'email' })
+  @Property({ name: 'email' })
   email: string;
 
-  @Column()
+  @Property()
   password: string;
 
-  @CreateDateColumn({
-    type: 'timestamptz',
-    precision: 3,
-  })
-  createdAt: Date;
+  @Property({ name: 'created_at', type: DateType })
+  createdAt = new Date();
 
-  @UpdateDateColumn({
-    type: 'timestamptz',
-    precision: 3,
-  })
-  updatedAt: Date;
+  @Property({ name: 'updated_at', onUpdate: () => new Date() })
+  updatedAt = new Date();
 }

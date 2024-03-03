@@ -25,6 +25,10 @@ export class ApiController {
   getRouteData(@Param('routeId') routeId: number) {
     return this.apiService.getObjectData(routeId);
   }
+  @Get('/routes/:routeId/objects')
+  getObjects(@Param('routeId') routeId: number) {
+    return this.apiService.getObjects(routeId);
+  }
   @Get('/getAllRoutes')
   getAllRoutes() {
     return this.apiService.getAllRoutes();
@@ -44,11 +48,10 @@ export class ApiController {
   @Post('/createRoute')
   createRoute(@Body() createRouteDto: CreateRouteDto, @Request() req) {
     const user = req.user;
-    console.log(user);
     return this.apiService.createRoute(createRouteDto, user);
   }
   @Post('/createObject')
-  createObject(@Body() createObjectDto: CreateObjectDto) {
-    return this.apiService.createObject(createObjectDto);
+  createObject(@Body() createObjectDto: CreateObjectDto, @Request() req) {
+    return this.apiService.createObject(createObjectDto, req.user);
   }
 }

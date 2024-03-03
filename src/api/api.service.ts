@@ -1,122 +1,82 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { DataSource, Table } from 'typeorm';
 import { Route } from './entities/route.entity';
+import { CustomType } from './entities/customType.entity';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { DeleteObjectDto } from './dto/delete-object.dto';
+import { MikroORM } from '@mikro-orm/core';
+import { EntityManager } from '@mikro-orm/postgresql';
+import Ajv from 'ajv';
 
 @Injectable()
 export class ApiService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly orm: MikroORM,
+    private readonly em: EntityManager,
+  ) {}
   async createRoute(createRouteDto: CreateRouteDto, user: any) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     try {
-      const savedRoute = await queryRunner.manager.save(Route, {
-        name: createRouteDto.name,
-        pluralName: 'test',
-        attributes: createRouteDto.attributes.map((x) => x),
-        createdBy: user.id,
-        changedBy: user.id,
-        amountOfObjects: 0,
-      });
+      console.log(createRouteDto);
+      return 'a';
+      // const route = this.em.create(Route, {
+      //   ...createRouteDto,
+      //   attributeSchema: createRouteDto.attributes.map((x) => x),
+      //   createdBy: user.id,
+      //   changedBy: user.id,
+      // });
 
-      await queryRunner.createTable(
-        new Table({
-          name: createRouteDto.name,
-          columns: [
-            {
-              name: 'id',
-              type: 'int',
-              isPrimary: true,
-              isGenerated: true,
-            },
-            ...createRouteDto.attributes.map((x) => x),
-          ],
-        }),
-      );
-      await queryRunner.commitTransaction();
+      // await this.em.insert(Route, route);
 
-      return savedRoute;
+      // return route;
     } catch (error) {
-      throw new HttpException('Route already exists.', HttpStatus.BAD_REQUEST, {
-        cause: error,
-      });
+      console.log(error);
+      return new HttpException(
+        'Route already exists.',
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
     }
   }
-  async createObject(createObjectDto: CreateObjectDto) {
-    const route = await this.dataSource.manager.findOneBy(Route, {
-      id: createObjectDto.route_id,
-    });
+  async createObject(createObjectDto: CreateObjectDto, user: any) {
+    console.log(createObjectDto);
+    return 'a';
 
-    const attributes = Object.fromEntries(
-      createObjectDto.attributes.map((item) => [item.name, item.value]),
-    );
+    // const newCustomObject = this.em.create(CustomType, {
+    //   routeId: createObjectDto.routeId,
+    //   attributes: createObjectDto.attributes,
+    //   createdBy: user.id,
+    //   changedBy: user.id,
+    // });
 
-    await this.dataSource
-      .createQueryBuilder()
-      .insert()
-      .into(route.name)
-      .values(attributes)
-      .execute();
+    // const savedCustomObject = this.em.insert(CustomType, newCustomObject);
 
-    await this.dataSource
-      .getRepository(Route)
-      .createQueryBuilder()
-      .update(Route)
-      .set({ amountOfObjects: () => 'amountOfObjects + 1' })
-      .where('id = :id', { id: route.id })
-      .execute();
-
-    return 'Inserted sucessfuly.';
+    // return savedCustomObject;
   }
 
-  async getObjectData(routeId: number) {
-    const route = await this.dataSource.manager.findOneBy(Route, {
-      id: routeId,
+  async getObjectData(objectId: number) {
+    const object = await this.em.findOne(CustomType, {
+      id: objectId,
     });
 
-    const objectData = await this.dataSource.manager
-      .createQueryBuilder()
-      .select()
-      .from(route.name, null)
-      .getRawMany();
-
-    return objectData;
+    return object;
   }
   async getAllRoutes() {
-    const routes = await this.dataSource.manager.getRepository(Route).find();
+    const routes = await this.em.getRepository(Route).findAll();
 
     return routes;
   }
   async deleteObject(deleteObjectDto: DeleteObjectDto) {
     try {
-      const route = await this.dataSource.manager.findOneBy(Route, {
-        name: deleteObjectDto.name,
-      });
+      const object = await this.em.findOne(
+        CustomType,
+        deleteObjectDto.objectId,
+      );
 
-      if (!route) {
-        return new HttpException(
-          'No route with given name was found.',
-          HttpStatus.NOT_FOUND,
-        );
-      }
+      const removedObject = this.em.remove(object);
 
-      const queryResult = await this.dataSource.manager
-        .createQueryBuilder()
-        .delete()
-        .from(route.name, null)
-        .where('id = :id', { id: route.id })
-        .delete()
-        .execute();
-
-      if (queryResult.affected > 0) {
-        return `Object ${deleteObjectDto.name} ${deleteObjectDto.objectId} was deleted`;
-      } else {
-        return `No object with given id exists within the collection.`;
-      }
+      return removedObject;
     } catch (error) {
       return new HttpException(
         error.message,
@@ -129,18 +89,25 @@ export class ApiService {
   }
   async getRouteDataByName(routeName: string) {
     try {
-      const route = await this.dataSource.manager.findOneBy(Route, {
-        name: routeName,
-      });
-      const objectData = await this.dataSource.manager
-        .createQueryBuilder()
-        .select()
-        .from(route.name, null)
-        .getRawMany();
-
-      return objectData;
+      // const route = await this.em.findOneBy(Route, {
+      //   name: routeName,
+      // });
+      // const objectData = await this.em
+      //   .createQueryBuilder()
+      //   .select()
+      //   .from(route.name, null)
+      //   .getRawMany();
+      // return objectData;
     } catch (error) {
       throw new HttpException('Route not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  async getObjects(routeId: number) {
+    const objects = await this.em.find(CustomType, {
+      routeId,
+    });
+
+    return objects;
   }
 }

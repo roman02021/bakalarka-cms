@@ -1,48 +1,43 @@
 import {
-  Column,
-  CreateDateColumn,
+  DateType,
   Entity,
-  PrimaryGeneratedColumn,
+  Opt,
+  PrimaryKey,
+  Property,
   Unique,
-  UpdateDateColumn,
-} from 'typeorm';
-import { Attribute } from '../types/attribute';
+} from '@mikro-orm/core';
 
-@Entity('routes')
-@Unique(['name', 'pluralName'])
+import { Attribute } from '../types/attribute';
+import { JSONSchemaType } from 'ajv';
+import { SomeJSONSchema } from 'ajv/dist/types/json-schema';
+
+@Entity({ tableName: 'routes' })
+@Unique({ properties: ['name', 'pluralName'] })
 export class Route {
-  @PrimaryGeneratedColumn()
+  @PrimaryKey()
   id: number;
 
-  @Column({ name: 'name' })
+  @Property({ name: 'name' })
   name: string;
 
-  @Column({ name: 'plural_name' })
+  @Property({ name: 'plural_name' })
   pluralName: string;
 
-  @Column({ name: 'created_by' })
+  @Property({ name: 'created_by' })
   createdBy: number;
 
-  @Column({ name: 'amount_of_objects', type: 'int', default: 0 })
-  amountOfObjects: number;
+  @Property({ name: 'amount_of_objects' })
+  amountOfObjects: number & Opt = 1;
 
-  @Column({ name: 'number' })
+  @Property({ name: 'number' })
   changedBy: number;
 
-  @CreateDateColumn({
-    type: 'timestamptz',
-    precision: 3,
-    name: 'created_at',
-  })
-  createdAt: Date;
+  @Property({ name: 'created_at', type: DateType })
+  createdAt = new Date();
 
-  @UpdateDateColumn({
-    type: 'timestamptz',
-    precision: 3,
-    name: 'updated_at',
-  })
-  updatedAt: Date;
+  @Property({ name: 'updated_at', onUpdate: () => new Date() })
+  updatedAt = new Date();
 
-  @Column({ type: 'json' })
-  attributes: Attribute[];
+  @Property({ type: 'json' })
+  attributeSchema: SomeJSONSchema;
 }

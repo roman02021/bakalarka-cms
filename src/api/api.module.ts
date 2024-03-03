@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApiController } from './api.controller';
 import { ApiService } from './api.service';
 import { Route } from './entities/route.entity';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Route])],
+  imports: [MikroOrmModule.forFeature([Route])],
   controllers: [ApiController],
   providers: [ApiService],
 })
