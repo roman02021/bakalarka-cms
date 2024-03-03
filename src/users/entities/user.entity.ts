@@ -25,9 +25,6 @@ export class User {
   @Column()
   password: string;
 
-  //   @Column()
-  //   changedBy: number;
-
   @CreateDateColumn({
     type: 'timestamptz',
     precision: 3,

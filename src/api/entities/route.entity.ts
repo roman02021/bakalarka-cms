@@ -23,6 +23,9 @@ export class Route {
   @Column({ name: 'created_by' })
   createdBy: number;
 
+  @Column({ name: 'amount_of_objects', type: 'int', default: 0 })
+  amountOfObjects: number;
+
   @Column({ name: 'number' })
   changedBy: number;
 
