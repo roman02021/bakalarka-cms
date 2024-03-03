@@ -6,17 +6,23 @@ import { CreateObjectDto } from './dto/create-object.dto';
 import { DeleteObjectDto } from './dto/delete-object.dto';
 import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
-import Ajv from 'ajv';
+import Ajv, { JSONSchemaType } from 'ajv';
+import { AjvService } from './ajvService.service';
+import { create } from 'domain';
 
 @Injectable()
 export class ApiService {
+  ajv: Ajv;
   constructor(
     private readonly orm: MikroORM,
     private readonly em: EntityManager,
-  ) {}
+  ) {
+    this.ajv = new Ajv();
+  }
   async createRoute(createRouteDto: CreateRouteDto, user: any) {
     try {
       console.log(createRouteDto);
+
       return 'a';
       // const route = this.em.create(Route, {
       //   ...createRouteDto,

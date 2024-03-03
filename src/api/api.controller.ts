@@ -25,7 +25,7 @@ export class ApiController {
   getRouteData(@Param('routeId') routeId: number) {
     return this.apiService.getObjectData(routeId);
   }
-  @Get('/routes/:routeId/objects')
+  @Get('/routes:')
   getObjects(@Param('routeId') routeId: number) {
     return this.apiService.getObjects(routeId);
   }
