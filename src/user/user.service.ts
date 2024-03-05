@@ -4,7 +4,7 @@ import { User } from './entities/User.entity';
 import { MikroORM, EntityManager } from '@mikro-orm/core';
 
 @Injectable()
-export class UsersService {
+export class UserService {
   constructor(
     private readonly orm: MikroORM,
     private readonly em: EntityManager,

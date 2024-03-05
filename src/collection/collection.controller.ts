@@ -8,50 +8,54 @@ import {
   Request,
   Delete,
 } from '@nestjs/common';
-import { CreateRouteDto } from './dto/create-route.dto';
-import { ApiService } from './api.service';
+import { CreateCollectionDto } from './dto/create-collection.dto';
+import { CollectionService } from './collection.service';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { DeleteObjectDto } from './dto/delete-object.dto';
 
-@Controller('api')
+@Controller('collection')
 @UseGuards(AuthGuard)
-export class ApiController {
-  constructor(private readonly apiService: ApiService) {
-    console.log('api route const ructed');
+export class CollectionController {
+  constructor(private readonly collectionService: CollectionService) {
+    console.log('collection api route constructed');
   }
 
   @Get('/getObjectData/:routeId')
   getRouteData(@Param('routeId') routeId: number) {
-    return this.apiService.getObjectData(routeId);
+    return this.collectionService.getObjectData(routeId);
   }
   @Get('/routes:')
   getObjects(@Param('routeId') routeId: number) {
-    return this.apiService.getObjects(routeId);
+    return this.collectionService.getObjects(routeId);
   }
   @Get('/getAllRoutes')
   getAllRoutes() {
-    return this.apiService.getAllRoutes();
+    return this.collectionService.getAllRoutes();
   }
   @Get('/:route')
   getRouteDataByName(@Param('route') route: string) {
-    return this.apiService.getRouteDataByName(route);
+    return this.collectionService.getRouteDataByName(route);
   }
   @Delete('/:route/:id')
   deleteObject(@Param('route') route: string, @Param('id') id: number) {
     console.log(route, id);
     const deleteObjectDto: DeleteObjectDto = { name: route, objectId: id };
 
-    return this.apiService.deleteObject(deleteObjectDto);
+    return this.collectionService.deleteObject(deleteObjectDto);
   }
 
-  @Post('/createRoute')
-  createRoute(@Body() createRouteDto: CreateRouteDto, @Request() req) {
+  @Post('/')
+  createCollection(
+    @Body() createCollectionDto: CreateCollectionDto,
+    @Request() req,
+  ) {
     const user = req.user;
-    return this.apiService.createRoute(createRouteDto, user);
+    console.log(user);
+    return this.collectionService.createCollection(createCollectionDto, user);
   }
   @Post('/createObject')
   createObject(@Body() createObjectDto: CreateObjectDto, @Request() req) {
-    return this.apiService.createObject(createObjectDto, req.user);
+    return this.collectionService.createObject(createObjectDto, req.user);
   }
 }

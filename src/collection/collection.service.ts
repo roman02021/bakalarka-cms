@@ -1,27 +1,25 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Route } from './entities/route.entity';
 import { CustomType } from './entities/customType.entity';
-import { CreateRouteDto } from './dto/create-route.dto';
+import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { DeleteObjectDto } from './dto/delete-object.dto';
 import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
-import Ajv, { JSONSchemaType } from 'ajv';
-import { AjvService } from './ajvService.service';
-import { create } from 'domain';
 
 @Injectable()
-export class ApiService {
-  ajv: Ajv;
+export class CollectionService {
   constructor(
     private readonly orm: MikroORM,
     private readonly em: EntityManager,
-  ) {
-    this.ajv = new Ajv();
-  }
-  async createRoute(createRouteDto: CreateRouteDto, user: any) {
+  ) {}
+  async createCollection(createCollectionDto: CreateCollectionDto, user: any) {
     try {
-      console.log(createRouteDto);
+      console.log(createCollectionDto);
+
+      // const knex = this.em.getKnex();
+
+      // knex.schema.create;
 
       return 'a';
       // const route = this.em.create(Route, {
