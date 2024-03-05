@@ -1,4 +1,13 @@
-export type Attribute = {
+// export type Attribute = {
+//   name: string;
+//   type: 'string' | 'integer' | 'decimal';
+// };
+import { IsString, IsIn } from 'class-validator';
+
+const TYPES = ['string', 'integer', 'decimal'];
+export class Attribute {
+  @IsString()
   name: string;
-  type: 'string' | 'integer' | 'decimal';
-};
+  @IsIn(TYPES)
+  type: string;
+}

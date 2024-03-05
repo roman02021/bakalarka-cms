@@ -7,6 +7,7 @@ import {
   UseGuards,
   Request,
   Delete,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionService } from './collection.service';
@@ -47,7 +48,7 @@ export class CollectionController {
 
   @Post('/')
   createCollection(
-    @Body() createCollectionDto: CreateCollectionDto,
+    @Body(ValidationPipe) createCollectionDto: CreateCollectionDto,
     @Request() req,
   ) {
     const user = req.user;

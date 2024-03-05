@@ -1,11 +1,14 @@
+import { Type } from 'class-transformer';
 import { Attribute } from '../../types/attribute';
-import { IsNotEmpty, IsString, IsJSON } from 'class-validator';
+import { IsString, ValidateNested, IsArray } from 'class-validator';
 
 export class CreateCollectionDto {
   @IsString()
   name: string;
-  @IsNotEmpty()
+  @IsString()
   pluralName: string;
-  @IsJSON()
-  attributeSchema: Attribute[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => Attribute)
+  attributes: Attribute[];
 }

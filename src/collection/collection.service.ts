@@ -6,22 +6,40 @@ import { CreateObjectDto } from './dto/create-object.dto';
 import { DeleteObjectDto } from './dto/delete-object.dto';
 import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class CollectionService {
   constructor(
     private readonly orm: MikroORM,
     private readonly em: EntityManager,
+    private readonly userService: UserService,
   ) {}
   async createCollection(createCollectionDto: CreateCollectionDto, user: any) {
     try {
       console.log(createCollectionDto);
 
-      // const knex = this.em.getKnex();
+      const knex = this.em.getKnex();
 
-      // knex.schema.create;
+      await knex.schema.createTable(createCollectionDto.name, function (table) {
+        console.log(createCollectionDto.attributes, 'gg');
+        table.increments('id').primary();
+        table.integer('created_by').unsigned().references('users.id');
+        table.dateTime('created_at');
+        table.dateTime('updated_at');
 
-      return 'a';
+        createCollectionDto.attributes.map((attribute) => {
+          if (attribute.type === 'string') {
+            table.string(attribute.name);
+          } else if (attribute.type === 'decimal') {
+            table.decimal(attribute.name);
+          } else if (attribute.type === 'integer') {
+            table.integer(attribute.name);
+          }
+        });
+      });
+
+      return `Created collection : ${createCollectionDto.name}`;
       // const route = this.em.create(Route, {
       //   ...createRouteDto,
       //   attributeSchema: createRouteDto.attributes.map((x) => x),
