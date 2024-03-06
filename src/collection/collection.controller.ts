@@ -14,6 +14,7 @@ import { CollectionService } from './collection.service';
 import { CreateObjectDto } from './dto/create-object.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { DeleteObjectDto } from './dto/delete-object.dto';
+import { User } from 'src/types/user';
 
 @Controller('collection')
 @UseGuards(AuthGuard)
@@ -38,12 +39,9 @@ export class CollectionController {
   getRouteDataByName(@Param('route') route: string) {
     return this.collectionService.getRouteDataByName(route);
   }
-  @Delete('/:route/:id')
-  deleteObject(@Param('route') route: string, @Param('id') id: number) {
-    console.log(route, id);
-    const deleteObjectDto: DeleteObjectDto = { name: route, objectId: id };
-
-    return this.collectionService.deleteObject(deleteObjectDto);
+  @Delete('/:collectionName')
+  deleteCollection(@Param('collectionName') collectionName: string) {
+    return this.collectionService.deleteCollection(collectionName);
   }
 
   @Post('/')
@@ -51,7 +49,7 @@ export class CollectionController {
     @Body(ValidationPipe) createCollectionDto: CreateCollectionDto,
     @Request() req,
   ) {
-    const user = req.user;
+    const user: User = req.user;
     console.log(user);
     return this.collectionService.createCollection(createCollectionDto, user);
   }

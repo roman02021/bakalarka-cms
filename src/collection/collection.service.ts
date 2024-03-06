@@ -1,12 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
-import { Route } from './entities/route.entity';
-import { CustomType } from './entities/customType.entity';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CreateObjectDto } from './dto/create-object.dto';
-import { DeleteObjectDto } from './dto/delete-object.dto';
 import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { UserService } from 'src/user/user.service';
+import { CollectionMetadata } from './entities/collectionMetadata.entity';
+import { User } from 'src/types/user';
 
 @Injectable()
 export class CollectionService {
@@ -15,45 +14,56 @@ export class CollectionService {
     private readonly em: EntityManager,
     private readonly userService: UserService,
   ) {}
-  async createCollection(createCollectionDto: CreateCollectionDto, user: any) {
+  async createCollection(createCollectionDto: CreateCollectionDto, user: User) {
     try {
-      console.log(createCollectionDto);
-
       const knex = this.em.getKnex();
 
-      await knex.schema.createTable(createCollectionDto.name, function (table) {
-        console.log(createCollectionDto.attributes, 'gg');
-        table.increments('id').primary();
-        table.integer('created_by').unsigned().references('users.id');
-        table.dateTime('created_at');
-        table.dateTime('updated_at');
+      if (await knex.schema.hasTable(createCollectionDto.name)) {
+        return new HttpException(
+          'Route already exists.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
-        createCollectionDto.attributes.map((attribute) => {
-          if (attribute.type === 'string') {
-            table.string(attribute.name);
-          } else if (attribute.type === 'decimal') {
-            table.decimal(attribute.name);
-          } else if (attribute.type === 'integer') {
-            table.integer(attribute.name);
-          }
+      await knex.transaction(async (trx) => {
+        await trx.schema.createTable(
+          createCollectionDto.name,
+          function (table) {
+            console.log(createCollectionDto.attributes, 'gg');
+            table.increments('id').primary();
+            table.integer('created_by').unsigned().references('cms_user.id');
+            table.dateTime('created_at');
+            table.dateTime('updated_at');
+
+            createCollectionDto.attributes.map((attribute) => {
+              if (attribute.type === 'string') {
+                table.string(attribute.name);
+              } else if (attribute.type === 'decimal') {
+                table.decimal(attribute.name);
+              } else if (attribute.type === 'integer') {
+                table.integer(attribute.name);
+              }
+            });
+          },
+        );
+
+        //Nemapovali sa ti polia entity na tabulku v db
+        //Napr. collectionName sa nemapovalo na collection_name v db
+
+        await trx('cms_collection_metadata').insert({
+          collection_name: createCollectionDto.name,
+          created_by: user.id,
+          created_at: new Date(),
+          updated_at: new Date(),
+          display_name: createCollectionDto.displayName,
         });
       });
 
       return `Created collection : ${createCollectionDto.name}`;
-      // const route = this.em.create(Route, {
-      //   ...createRouteDto,
-      //   attributeSchema: createRouteDto.attributes.map((x) => x),
-      //   createdBy: user.id,
-      //   changedBy: user.id,
-      // });
-
-      // await this.em.insert(Route, route);
-
-      // return route;
     } catch (error) {
       console.log(error);
       return new HttpException(
-        'Route already exists.',
+        'Something went wrong.',
         HttpStatus.BAD_REQUEST,
         {
           cause: error,
@@ -78,31 +88,27 @@ export class CollectionService {
   }
 
   async getObjectData(objectId: number) {
-    const object = await this.em.findOne(CustomType, {
-      id: objectId,
-    });
-
-    return object;
+    // const object = await this.em.findOne(CustomType, {
+    //   id: objectId,
+    // });
+    // return object;
   }
   async getAllRoutes() {
-    const routes = await this.em.getRepository(Route).findAll();
-
-    return routes;
+    // const routes = await this.em.getRepository(Route).findAll();
+    // return routes;
   }
-  async deleteObject(deleteObjectDto: DeleteObjectDto) {
+  async deleteCollection(collectionName: string) {
     try {
-      const object = await this.em.findOne(
-        CustomType,
-        deleteObjectDto.objectId,
-      );
+      console.log(collectionName);
+      const knex = this.em.getKnex();
 
-      const removedObject = this.em.remove(object);
+      await knex.schema.dropTableIfExists(collectionName);
 
-      return removedObject;
+      return `Collection deleted: ${collectionName}`;
     } catch (error) {
       return new HttpException(
-        error.message,
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Something went wrong.',
+        HttpStatus.BAD_REQUEST,
         {
           cause: error,
         },
@@ -126,10 +132,9 @@ export class CollectionService {
   }
 
   async getObjects(routeId: number) {
-    const objects = await this.em.find(CustomType, {
-      routeId,
-    });
-
-    return objects;
+    // const objects = await this.em.find(CustomType, {
+    //   routeId,
+    // });
+    // return objects;
   }
 }

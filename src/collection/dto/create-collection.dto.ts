@@ -6,7 +6,7 @@ export class CreateCollectionDto {
   @IsString()
   name: string;
   @IsString()
-  pluralName: string;
+  displayName: string;
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => Attribute)
