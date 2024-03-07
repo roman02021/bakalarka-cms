@@ -1,48 +1,35 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
   Param,
+  Request,
+  ValidationPipe,
+  UseGuards,
   Delete,
 } from '@nestjs/common';
 import { ItemsService } from './item.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { User } from 'src/types/user';
 
-@Controller('items')
+@Controller('item')
+@UseGuards(AuthGuard)
 export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
 
-  @Post()
-  create(@Body() createItemDto: CreateItemDto) {
-    return this.itemsService.create(createItemDto);
+  @Post('/:collection')
+  createItem(
+    @Param('collection') collection: string,
+    @Body() attributes: Record<string, any>,
+    @Request() req,
+  ) {
+    const user: User = req.user;
+    return this.itemsService.createItem(collection, attributes, user);
   }
-
-  @Post('test')
-  test(@Body() test: Record<string, any>) {
-    console.log(test);
-    return '1';
-  }
-
-  @Get()
-  findAll() {
-    return this.itemsService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.itemsService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateItemDto: UpdateItemDto) {
-    return this.itemsService.update(+id, updateItemDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.itemsService.remove(+id);
+  @Delete('/:collection/:id')
+  deleteItem(@Param('id') id: number, @Param('collection') collection: string) {
+    return this.itemsService.deleteItem(collection, id);
   }
 }

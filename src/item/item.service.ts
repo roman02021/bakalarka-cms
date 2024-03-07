@@ -1,26 +1,50 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { User } from 'src/types/user';
 
 @Injectable()
 export class ItemsService {
-  create(createItemDto: CreateItemDto) {
-    return 'This action adds a new item';
-  }
+  constructor(private readonly em: EntityManager) {}
+  async createItem(
+    collection: string,
+    attributes: Record<string, any>,
+    user: User,
+  ) {
+    try {
+      const knex = this.em.getKnex();
 
-  findAll() {
-    return `This action returns all items`;
-  }
+      const itemId = await knex(collection)
+        .insert({ created_by: user.id, ...attributes })
+        .returning('id');
 
-  findOne(id: number) {
-    return `This action returns a #${id} item`;
+      return itemId;
+    } catch (error) {
+      return new HttpException(
+        'Something went wrong.',
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
   }
+  async deleteItem(collection: string, id: number) {
+    try {
+      const knex = this.em.getKnex();
 
-  update(id: number, updateItemDto: UpdateItemDto) {
-    return `This action updates a #${id} item`;
-  }
+      const itemId = await knex(collection).where('id', id).del();
 
-  remove(id: number) {
-    return `This action removes a #${id} item`;
+      return itemId;
+    } catch (error) {
+      return new HttpException(
+        'Something went wrong.',
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
   }
 }

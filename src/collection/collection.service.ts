@@ -1,19 +1,12 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
-import { CreateObjectDto } from './dto/create-object.dto';
-import { MikroORM } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { UserService } from 'src/user/user.service';
-import { CollectionMetadata } from './entities/collectionMetadata.entity';
 import { User } from 'src/types/user';
+import { CollectionMetadata } from './entities/collectionMetadata.entity';
 
 @Injectable()
 export class CollectionService {
-  constructor(
-    private readonly orm: MikroORM,
-    private readonly em: EntityManager,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly em: EntityManager) {}
   async createCollection(createCollectionDto: CreateCollectionDto, user: User) {
     try {
       const knex = this.em.getKnex();
@@ -32,8 +25,7 @@ export class CollectionService {
             console.log(createCollectionDto.attributes, 'gg');
             table.increments('id').primary();
             table.integer('created_by').unsigned().references('cms_user.id');
-            table.dateTime('created_at');
-            table.dateTime('updated_at');
+            table.timestamps(true, true);
 
             createCollectionDto.attributes.map((attribute) => {
               if (attribute.type === 'string') {
@@ -46,6 +38,8 @@ export class CollectionService {
             });
           },
         );
+
+        console.log('yi');
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db
@@ -71,40 +65,26 @@ export class CollectionService {
       );
     }
   }
-  async createObject(createObjectDto: CreateObjectDto, user: any) {
-    console.log(createObjectDto);
-    return 'a';
+  async getAllCollections() {
+    const collections = await this.em
+      .createQueryBuilder(CollectionMetadata)
+      .select('*');
 
-    // const newCustomObject = this.em.create(CustomType, {
-    //   routeId: createObjectDto.routeId,
-    //   attributes: createObjectDto.attributes,
-    //   createdBy: user.id,
-    //   changedBy: user.id,
-    // });
-
-    // const savedCustomObject = this.em.insert(CustomType, newCustomObject);
-
-    // return savedCustomObject;
+    return collections;
   }
-
-  async getObjectData(objectId: number) {
-    // const object = await this.em.findOne(CustomType, {
-    //   id: objectId,
-    // });
-    // return object;
-  }
-  async getAllRoutes() {
-    // const routes = await this.em.getRepository(Route).findAll();
-    // return routes;
-  }
-  async deleteCollection(collectionName: string) {
+  async deleteCollection(collection: string) {
     try {
-      console.log(collectionName);
       const knex = this.em.getKnex();
 
-      await knex.schema.dropTableIfExists(collectionName);
+      await knex.transaction(async (trx) => {
+        await trx.schema.dropTableIfExists(collection);
 
-      return `Collection deleted: ${collectionName}`;
+        await trx('cms_collection_metadata')
+          .where('collection_name', collection)
+          .del();
+      });
+
+      return `Collection deleted: ${collection}`;
     } catch (error) {
       return new HttpException(
         'Something went wrong.',
@@ -114,27 +94,5 @@ export class CollectionService {
         },
       );
     }
-  }
-  async getRouteDataByName(routeName: string) {
-    try {
-      // const route = await this.em.findOneBy(Route, {
-      //   name: routeName,
-      // });
-      // const objectData = await this.em
-      //   .createQueryBuilder()
-      //   .select()
-      //   .from(route.name, null)
-      //   .getRawMany();
-      // return objectData;
-    } catch (error) {
-      throw new HttpException('Route not found', HttpStatus.NOT_FOUND);
-    }
-  }
-
-  async getObjects(routeId: number) {
-    // const objects = await this.em.find(CustomType, {
-    //   routeId,
-    // });
-    // return objects;
   }
 }
