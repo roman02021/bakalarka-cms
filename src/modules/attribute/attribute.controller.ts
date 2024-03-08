@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AttributeService } from './attribute.service';
 import { CreateAttributesDto } from './dto/attribute.dto';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('attribute')
 @UseGuards(AuthGuard)

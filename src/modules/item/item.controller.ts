@@ -4,14 +4,13 @@ import {
   Body,
   Param,
   Request,
-  ValidationPipe,
   UseGuards,
   Delete,
 } from '@nestjs/common';
 import { ItemsService } from './item.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
 
 @Controller('item')

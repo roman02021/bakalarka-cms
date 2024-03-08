@@ -1,6 +1,6 @@
-import { DateType, Entity, Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
 
-@Entity({ tableName: 'cms_collection_metadata' })
+@Entity({ tableName: 'cms_collections' })
 export class CollectionMetadata {
   @PrimaryKey()
   id: number;

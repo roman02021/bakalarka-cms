@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateAttributesDto } from './dto/attribute.dto';
-import { EntityManager } from '@mikro-orm/postgresql';
+import { EntityManager, Knex } from '@mikro-orm/postgresql';
+import { Attribute } from 'src/types/attribute';
 
 @Injectable()
 export class AttributeService {
@@ -31,6 +32,27 @@ export class AttributeService {
         });
       });
       return `Attributes created`;
+    } catch (error) {
+      console.log(error);
+      return new HttpException(
+        'Something went wrong.',
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+  addColumnToTable(table: Knex.CreateTableBuilder, attribute: Attribute) {
+    try {
+      console.log(table, attribute);
+      if (attribute.type === 'string') {
+        table.string(attribute.name);
+      } else if (attribute.type === 'decimal') {
+        table.decimal(attribute.name);
+      } else if (attribute.type === 'integer') {
+        table.integer(attribute.name);
+      }
     } catch (error) {
       console.log(error);
       return new HttpException(

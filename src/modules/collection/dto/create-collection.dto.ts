@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { Attribute } from '../../types/attribute';
+import { Attribute } from '../../../types/attribute';
 import { IsString, ValidateNested, IsArray } from 'class-validator';
 
 export class CreateCollectionDto {

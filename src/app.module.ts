@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CollectionController } from './collection/collection.controller';
-import { CollectionService } from './collection/collection.service';
-import { ItemsModule } from './item/item.module';
-import { CollectionModule } from './collection/collection.module';
-import { UserModule } from './user/user.module';
-import { AuthModule } from './auth/auth.module';
-import { FileModule } from './file/file.module';
+import { CollectionController } from './modules/collection/collection.controller';
+import { CollectionService } from './modules/collection/collection.service';
+import { ItemsModule } from './modules/item/item.module';
+import { CollectionModule } from './modules/collection/collection.module';
+import { UserModule } from './modules/user/user.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { FileModule } from './modules/file/file.module';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
-import { AttributeModule } from './attribute/attribute.module';
+import { AttributeModule } from './modules/attribute/attribute.module';
 
 @Module({
   imports: [

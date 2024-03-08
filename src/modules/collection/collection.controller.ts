@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionService } from './collection.service';
-import { AuthGuard } from 'src/auth/auth.guard';
+import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
 
 @Controller('collection')

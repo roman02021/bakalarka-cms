@@ -7,5 +7,6 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
   imports: [MikroOrmModule.forFeature([])],
   providers: [AttributeService],
   controllers: [AttributeController],
+  exports: [AttributeService],
 })
 export class AttributeModule {}

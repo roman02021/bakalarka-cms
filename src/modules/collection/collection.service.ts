@@ -3,10 +3,14 @@ import { CreateCollectionDto } from './dto/create-collection.dto';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from 'src/types/user';
 import { CollectionMetadata } from './entities/collectionMetadata.entity';
+import { AttributeService } from '../attribute/attribute.service';
 
 @Injectable()
 export class CollectionService {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly attributeService: AttributeService,
+  ) {}
   async createCollection(createCollectionDto: CreateCollectionDto, user: User) {
     try {
       const knex = this.em.getKnex();
@@ -19,32 +23,20 @@ export class CollectionService {
       }
 
       await knex.transaction(async (trx) => {
-        await trx.schema.createTable(
-          createCollectionDto.name,
-          function (table) {
-            console.log(createCollectionDto.attributes, 'gg');
-            table.increments('id').primary();
-            table.integer('created_by').unsigned().references('cms_user.id');
-            table.timestamps(true, true);
+        await trx.schema.createTable(createCollectionDto.name, (table) => {
+          table.increments('id').primary();
+          table.integer('created_by').unsigned().references('cms_user.id');
+          table.timestamps(true, true);
 
-            createCollectionDto.attributes.map((attribute) => {
-              if (attribute.type === 'string') {
-                table.string(attribute.name);
-              } else if (attribute.type === 'decimal') {
-                table.decimal(attribute.name);
-              } else if (attribute.type === 'integer') {
-                table.integer(attribute.name);
-              }
-            });
-          },
-        );
-
-        console.log('yi');
+          createCollectionDto.attributes.map((attribute) => {
+            this.attributeService.addColumnToTable(table, attribute);
+          });
+        });
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db
 
-        await trx('cms_collection_metadata').insert({
+        await trx(this.em.getMetadata(CollectionMetadata).tableName).insert({
           collection_name: createCollectionDto.name,
           created_by: user.id,
           created_at: new Date(),
@@ -79,7 +71,7 @@ export class CollectionService {
       await knex.transaction(async (trx) => {
         await trx.schema.dropTableIfExists(collection);
 
-        await trx('cms_collection_metadata')
+        await trx(this.em.getMetadata(CollectionMetadata).tableName)
           .where('collection_name', collection)
           .del();
       });
