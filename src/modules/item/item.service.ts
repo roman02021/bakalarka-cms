@@ -30,6 +30,40 @@ export class ItemsService {
       );
     }
   }
+  async getItem(collection: string, id: number) {
+    try {
+      const knex = this.em.getKnex();
+
+      const item = await knex(collection).where('id', id);
+
+      return item;
+    } catch (error) {
+      return new HttpException(
+        'Something went wrong.',
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+  async getItems(collection: string) {
+    try {
+      const knex = this.em.getKnex();
+
+      const item = await knex(collection);
+
+      return item;
+    } catch (error) {
+      return new HttpException(
+        'Something went wrong.',
+        HttpStatus.BAD_REQUEST,
+        {
+          cause: error,
+        },
+      );
+    }
+  }
   async deleteItem(collection: string, id: number) {
     try {
       const knex = this.em.getKnex();

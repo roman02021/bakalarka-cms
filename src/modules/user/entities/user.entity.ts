@@ -6,7 +6,7 @@ import {
   Unique,
 } from '@mikro-orm/core';
 
-@Entity({ tableName: 'cms_user' })
+@Entity({ tableName: 'cms_users' })
 @Unique({ properties: ['email'] })
 export class User {
   @PrimaryKey()

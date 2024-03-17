@@ -1,4 +1,4 @@
-export class FolderDto {
-  name: string;
-  path: string;
+export class UploadFileDto {
+  folderName: string;
+  folderId: number;
 }

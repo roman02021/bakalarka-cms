@@ -25,7 +25,7 @@ export class CollectionService {
       await knex.transaction(async (trx) => {
         await trx.schema.createTable(createCollectionDto.name, (table) => {
           table.increments('id').primary();
-          table.integer('created_by').unsigned().references('cms_user.id');
+          table.integer('created_by').unsigned().references('cms_users.id');
           table.timestamps(true, true);
 
           createCollectionDto.attributes.map((attribute) => {

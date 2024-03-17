@@ -6,6 +6,7 @@ import {
   Request,
   UseGuards,
   Delete,
+  Get,
 } from '@nestjs/common';
 import { ItemsService } from './item.service';
 import { CreateItemDto } from './dto/create-item.dto';
@@ -26,6 +27,15 @@ export class ItemsController {
   ) {
     const user: User = req.user;
     return this.itemsService.createItem(collection, attributes, user);
+  }
+  @Get('/:collection/:id')
+  getItem(@Param('collection') collection: string, @Param('id') id: number) {
+    console.log(collection, id);
+    return this.itemsService.getItem(collection, id);
+  }
+  @Get('/:collection')
+  getItems(@Param('collection') collection: string) {
+    return this.itemsService.getItems(collection);
   }
   @Delete('/:collection/:id')
   deleteItem(@Param('id') id: number, @Param('collection') collection: string) {

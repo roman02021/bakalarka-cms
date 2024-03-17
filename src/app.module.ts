@@ -9,19 +9,29 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FileModule } from './modules/file/file.module';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { AttributeModule } from './modules/attribute/attribute.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { TestModule } from './test/test.module';
+import { StorageService } from './storage/storage.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     MikroOrmModule.forRoot(),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '../../files'),
+      serveRoot: '/files',
+      serveStaticOptions: { index: false },
+    }),
     AuthModule,
     ItemsModule,
     CollectionModule,
     UserModule,
     FileModule,
     AttributeModule,
+    TestModule,
   ],
   controllers: [CollectionController],
-  providers: [CollectionService],
+  providers: [CollectionService, StorageService],
 })
 export class AppModule {}
