@@ -28,6 +28,12 @@ export class AttributeService {
             table.decimal(attribute.name);
           } else if (attribute.type === 'integer') {
             table.integer(attribute.name);
+          } else if (attribute.type === 'relation') {
+            console.log(attribute);
+            table
+              .foreign(attribute.name)
+              .references(attribute.referencedColumn)
+              .inTable(attribute.referencedTable);
           }
         });
       });

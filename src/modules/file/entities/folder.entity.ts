@@ -1,17 +1,9 @@
-import {
-  Entity,
-  ManyToOne,
-  OneToOne,
-  PrimaryKey,
-  Property,
-} from '@mikro-orm/core';
+import { Entity, ManyToOne, OneToOne, Property } from '@mikro-orm/core';
 import { User } from '../../user/entities/user.entity';
+import { BaseEntity } from '../../shared/base.entity';
 
 @Entity({ tableName: 'cms_folders' })
-export class Folder {
-  @PrimaryKey()
-  id: number;
-
+export class Folder extends BaseEntity {
   @Property()
   name: string;
 
@@ -24,6 +16,6 @@ export class Folder {
   @Property()
   absolutePath: string;
 
-  @OneToOne()
+  @ManyToOne({ nullable: true })
   parentFolder: Folder;
 }

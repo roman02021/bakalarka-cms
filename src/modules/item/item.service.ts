@@ -30,6 +30,14 @@ export class ItemsService {
       );
     }
   }
+  async updateItem(
+    collection: string,
+    id: number,
+    attributes: Record<string, any>,
+    user: User,
+  ) {
+    return 'TODO';
+  }
   async getItem(collection: string, id: number) {
     try {
       const knex = this.em.getKnex();

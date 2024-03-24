@@ -1,6 +1,7 @@
-import { Options, ReflectMetadataProvider } from '@mikro-orm/core';
+import { Options } from '@mikro-orm/core';
 import { EntityGenerator } from '@mikro-orm/entity-generator';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
+import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 const config: Options = {
   driver: PostgreSqlDriver,
@@ -10,8 +11,8 @@ const config: Options = {
   user: 'test_user',
   password: 'test_password',
   entities: ['dist/**/*.entity.js'],
-  entitiesTs: ['src/**/*.entity.ts'],
-  metadataProvider: ReflectMetadataProvider,
+  entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
+  metadataProvider: TsMorphMetadataProvider,
   debug: true,
   schemaGenerator: {
     disableForeignKeys: true,

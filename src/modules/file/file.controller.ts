@@ -7,64 +7,55 @@ import {
   Get,
   Param,
   Request,
-  NotAcceptableException,
   ParseFilePipe,
   Body,
+  Put,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileService } from './file.service';
 import { AuthGuard } from '../auth/auth.guard';
-import { FileDto } from './dto/file.dto';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
 import { User } from '../user/entities/User.entity';
 import { UploadFileDto } from './dto/upload-file.dto';
+import { CreateFolderDto } from './dto/create-folder.dto';
+import { UpdateFolderDto } from './dto/update-folder.dto';
 
 @Controller('file')
 @UseGuards(AuthGuard)
 export class FileController {
   constructor(private fileService: FileService) {}
+
   @Post('upload')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './files',
-        filename: (req, file, callback) => {
-          const name = file.originalname.split('.')[0];
-          const extension = extname(file.originalname);
-          const randomName = Array(32).fill(null).join('');
-          callback(null, `${name}-${randomName}${extension}`);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @UploadedFile(new ParseFilePipe({})) file: Express.Multer.File,
     @Request() req,
     @Body() uploadFileDto: UploadFileDto,
   ) {
-    console.log(uploadFileDto);
+    console.log(uploadFileDto.data.folderId, 'ca ');
     const user: User = req.user;
     return this.fileService.saveFile(file, user, uploadFileDto);
   }
-  @Post('folder/:folderName')
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './files/ayo',
-      }),
-    }),
-  )
-  createFolder(@UploadedFile(new ParseFilePipe({})) file: Express.Multer.File) {
-    console.log(file);
-    return this.fileService.createFolder();
+  @Post('folder')
+  createFolder(@Body() createFolderDto: CreateFolderDto, @Request() req) {
+    console.log(createFolderDto, 'controller');
+    const user: User = req.user;
+    return this.fileService.createFolder(createFolderDto, user);
   }
-  @Get('/')
-  getAllFiles() {
-    return this.fileService.getAllFiles();
+
+  @Put('folder/:folderId')
+  updateFolder(
+    @Body() updateFolderDto: UpdateFolderDto,
+    @Param('folderId') folderId: number,
+  ) {
+    return this.fileService.updateFolder(updateFolderDto, folderId);
   }
-  @Get('/:folder')
-  getFilesInFolder(@Param('folder') folder: string) {
-    return this.fileService.getFilesInFolder(folder);
+
+  @Get('folder')
+  getFilesInRootFolder() {
+    return this.fileService.getFilesInRootFolder();
+  }
+  @Get('folder/:folderId')
+  getFilesInFolder(@Param('folderId') folderId: number | null) {
+    return this.fileService.getFilesInFolder(folderId);
   }
 }

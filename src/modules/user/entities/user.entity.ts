@@ -1,17 +1,9 @@
-import {
-  DateType,
-  Entity,
-  PrimaryKey,
-  Property,
-  Unique,
-} from '@mikro-orm/core';
+import { Entity, Property, Unique } from '@mikro-orm/core';
+import { BaseEntity } from '../../shared/base.entity';
 
 @Entity({ tableName: 'cms_users' })
 @Unique({ properties: ['email'] })
-export class User {
-  @PrimaryKey()
-  id: number;
-
+export class User extends BaseEntity {
   @Property()
   name: string;
 
@@ -23,10 +15,4 @@ export class User {
 
   @Property()
   password: string;
-
-  @Property({ name: 'created_at', type: DateType })
-  createdAt = new Date();
-
-  @Property({ name: 'updated_at', onUpdate: () => new Date() })
-  updatedAt = new Date();
 }

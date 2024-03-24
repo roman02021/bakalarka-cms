@@ -11,8 +11,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { AttributeModule } from './modules/attribute/attribute.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { TestModule } from './test/test.module';
-import { StorageService } from './storage/storage.service';
+import { FoldersModule } from './folders/folders.module';
 
 @Module({
   imports: [
@@ -29,9 +28,9 @@ import { StorageService } from './storage/storage.service';
     UserModule,
     FileModule,
     AttributeModule,
-    TestModule,
+    FoldersModule,
   ],
   controllers: [CollectionController],
-  providers: [CollectionService, StorageService],
+  providers: [CollectionService],
 })
 export class AppModule {}

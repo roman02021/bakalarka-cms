@@ -1,0 +1,1 @@
+{"data":{"_id":5000,"properties":{},"primaryKeys":[],"filters":{},"hooks":{},"indexes":[],"uniques":[],"className":"Test","path":"./dist/src/test/entities/test.entity.js","abstract":true,"internal":true,"constructorParams":[],"toJsonParams":[],"useCache":true},"origin":"./dist/src/test/entities/test.entity.js","hash":"16a467b486fb957ddb7e2de833bf56b5","version":"6.1.6"}

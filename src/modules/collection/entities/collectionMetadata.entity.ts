@@ -1,18 +1,10 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, Property } from '@mikro-orm/core';
+import { BaseEntity } from '../../shared/base.entity';
 
 @Entity({ tableName: 'cms_collections' })
-export class CollectionMetadata {
-  @PrimaryKey()
-  id: number;
-
+export class CollectionMetadata extends BaseEntity {
   @Property()
   createdBy: number;
-
-  @Property()
-  createdAt = new Date();
-
-  @Property({ onUpdate: () => new Date() })
-  updatedAt = new Date();
 
   @Property({ name: 'display_name' })
   displayName: string;

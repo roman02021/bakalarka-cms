@@ -1,12 +1,9 @@
-import { Entity, ManyToOne, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, Property } from '@mikro-orm/core';
 import { Folder } from './folder.entity';
 import { User } from '../../user/entities/user.entity';
-
+import { BaseEntity } from '../../shared/base.entity';
 @Entity({ tableName: 'cms_files' })
-export class File {
-  @PrimaryKey()
-  id: number;
-
+export class File extends BaseEntity {
   @Property({ unsigned: true })
   fileSize: number;
 
@@ -22,6 +19,6 @@ export class File {
   @ManyToOne(() => User)
   createdBy: User;
 
-  @ManyToOne(() => Folder, { nullable: true })
+  @ManyToOne({ nullable: true })
   parentFolder?: Folder;
 }

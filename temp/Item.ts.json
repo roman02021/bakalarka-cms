@@ -1,0 +1,1 @@
+{"data":{"_id":7000,"properties":{},"primaryKeys":[],"filters":{},"hooks":{},"indexes":[],"uniques":[],"className":"Item","path":"./src/modules/item/entities/item.entity.ts","abstract":true,"internal":true,"constructorParams":[],"toJsonParams":[],"useCache":true},"origin":"./src/modules/item/entities/item.entity.ts","hash":"c5ff803b1c7d15198f05254e9b4d7a86","version":"6.1.6"}

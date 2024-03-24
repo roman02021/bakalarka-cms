@@ -1,6 +1,6 @@
-import { IsString, IsIn } from 'class-validator';
+import { IsString, IsIn, IsOptional } from 'class-validator';
 
-const TYPES = ['string', 'integer', 'decimal'];
+const TYPES = ['string', 'integer', 'decimal', 'relation'];
 export class Attribute {
   @IsString()
   displayName: string;
@@ -8,4 +8,10 @@ export class Attribute {
   name: string;
   @IsIn(TYPES)
   type: string;
+  @IsString()
+  @IsOptional()
+  referencedColumn: string;
+  @IsString()
+  @IsOptional()
+  referencedTable: string;
 }
