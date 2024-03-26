@@ -94,7 +94,7 @@ export class FileService {
         createdBy: user.id,
       });
       const insertedFolder = await this.em.insert(Folder, newFolder);
-
+      console.log(absolutePath, 'inser to');
       mkdirSync(absolutePath);
       return insertedFolder;
     } catch (error) {
@@ -145,143 +145,70 @@ export class FileService {
     };
     return response;
   }
-  async getAbsolutePath(folderId: number | null, name: string) {
-    let absolutePath = path.join(process.cwd(), 'files');
-    if (folderId) {
-      const knex = this.em.getKnex();
-      const result = await knex
-        .withRecursive('ancestors', (qb) => {
-          qb.select('cms_folders.name', 'cms_folders.parent_folder_id')
-            .from('cms_folders')
-            .where('cms_folders.id', folderId)
-            .unionAll((qb) => {
-              qb.select('cms_folders.name', 'cms_folders.parent_folder_id')
-                .from('cms_folders')
-                .join(
-                  'ancestors',
-                  'ancestors.parent_folder_id',
-                  'cms_folders.id',
-                );
-            });
-        })
-        .select('*')
-        .from('ancestors');
-
-      const relativePath = result
-        .reverse()
-        .reduce((acc, currentValue) => acc + `/${currentValue.name}`, ``);
-      absolutePath = path.join(absolutePath, relativePath, name);
-    } else {
-      absolutePath = path.join(absolutePath, name);
-    }
-    return absolutePath;
-  }
 
   async updateFolder(updateFolderDto: UpdateFolderDto, folderId: number) {
     try {
-      const folder = await this.em.findOneOrFail(Folder, folderId);
-      const knex = this.em.getKnex();
+      //1. get folder you want to move
+      const folderToMove = await this.em.findOneOrFail(Folder, folderId);
 
-      // console.log(folderId);
-
-      // folder.name = updateFolderDto.newName;
-
+      //2. get folder you want to move to if move to root, just set the parent to null
       if (updateFolderDto.newParentFolder === null) {
-        folder.parentFolder = null;
-        const absolutePath = await this.getAbsolutePath(null, folder.name);
-        fs.renameSync(folder.absolutePath, `${absolutePath}`);
-        folder.parentFolder = null;
-        folder.absolutePath = absolutePath;
-        if (updateFolderDto?.newName) {
-          folder.name = updateFolderDto.newName;
-        }
-      } else if (updateFolderDto.newParentFolder) {
+        folderToMove.parentFolder = null;
+      } else {
         const newParentFolder = await this.em.findOneOrFail(
           Folder,
           updateFolderDto.newParentFolder,
+          { populate: ['files'] },
         );
-        const absolutePath = await this.getAbsolutePath(
-          updateFolderDto.newParentFolder,
-          updateFolderDto.newName ? updateFolderDto.newName : folder.name,
-        );
-        console.log(absolutePath, 'MMMM');
-        fs.renameSync(folder.absolutePath, absolutePath);
-        folder.absolutePath = absolutePath;
-        folder.parentFolder = newParentFolder;
-        const nestedFoolders = await knex
-          .withRecursive('folder_tree', (qb) => {
-            qb.select(
-              'cms_folders.name',
-              'cms_folders.parent_folder_id',
-              'cms_folders.id',
-              'cms_folders.absolute_path',
-            )
-              .from('cms_folders')
-              .where('cms_folders.id', folderId)
-              .unionAll((qb) => {
-                qb.select(
-                  'cms_folders.name',
-                  'cms_folders.parent_folder_id',
-                  'cms_folders.id',
-                  'cms_folders.absolute_path',
-                )
-                  .from('cms_folders')
-                  .join(
-                    'folder_tree',
-                    'folder_tree.id',
-                    'cms_folders.parent_folder_id',
-                  );
-              });
-          })
-          .select('*')
-          .from('folder_tree');
-
-        console.log(nestedFoolders, 'yoo');
-
-        const rootFolder = await this.em.findOneOrFail(Folder, folderId);
-
-        rootFolder.absolutePath = await this.getAbsolutePath(
-          updateFolderDto.newParentFolder,
-          updateFolderDto.newName ? updateFolderDto.newName : rootFolder.name,
-        );
-
-        let isFirstLevel = true;
-
-        for (const nestedFolder of nestedFoolders) {
-          const folder = await this.em.findOneOrFail(Folder, nestedFolder.id, {
-            populate: ['files'],
-          });
-          for (const test of await folder.files.loadItems()) {
-            console.log(test, 'giga');
-          }
-          folder.absolutePath = await this.getAbsolutePath(
-            isFirstLevel ? rootFolder.id : folder.id,
-            folder.name,
-          );
-
-          console.log(folder.absolutePath, 'new path');
-
-          // const filesInFolder = folder.files.getItems();
-
-          // console.log(filesInFolder);
-
-          // for (const fileInFolder of filesInFolder) {
-          //   fileInFolder.absolutePath = await this.getAbsolutePath(
-          //     fileInFolder.id,
-          //     fileInFolder.name,
-          //   );
-
-          //   console.log(fileInFolder, 'test');
-          // }
-          // isFirstLevel = false;
-        }
-        if (updateFolderDto?.newName && !nestedFoolders.length) {
-          folder.name = updateFolderDto.newName;
-        }
+        folderToMove.parentFolder = newParentFolder;
       }
 
+      //3. get updated path of the root folder
+      const newAbsolutePath = await this.getAbsolutePath(
+        updateFolderDto.newParentFolder,
+        updateFolderDto.newName ? updateFolderDto.newName : folderToMove.name,
+      );
+
+      //4. physically move the folder with it's content to new location
+      fs.renameSync(folderToMove.absolutePath, newAbsolutePath);
+
+      //5. set new virtual path of the moved folder
+      folderToMove.absolutePath = newAbsolutePath;
+      folderToMove.relativePath = newAbsolutePath;
+
+      //6. set new virtual paths of files in root of the moved folder
+      const rootFiles = await folderToMove.files.loadItems();
+      for (const rootFile of rootFiles) {
+        rootFile.absolutePath = newAbsolutePath;
+        rootFile.relativePath = newAbsolutePath;
+      }
+
+      //7. get all the nested folders inside of the moved folder
+      const nestedFolders = await this.getNestedFolders(folderToMove.id);
+
+      //8. loop over nested folders and set their paths
+      for (const nestedFolder of nestedFolders) {
+        const folder = await this.em.findOneOrFail(Folder, nestedFolder.id, {
+          populate: ['files'],
+        });
+
+        const newAbsolutePath = await this.getAbsolutePath(folder.id, '');
+        folder.absolutePath = newAbsolutePath;
+        folder.relativePath = newAbsolutePath;
+
+        //9. loop over nested files and set their paths
+        for (const nestedFile of await folder.files.loadItems()) {
+          nestedFile.absolutePath = newAbsolutePath;
+          nestedFile.relativePath = newAbsolutePath;
+        }
+      }
+      //10. set the folder name to new name
+      if (updateFolderDto?.newName && !nestedFolders.length) {
+        folderToMove.name = updateFolderDto.newName;
+      }
+      //11. save
       this.em.flush();
-      return folder;
+      return folderToMove;
     } catch (error) {
       console.log(error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
@@ -332,6 +259,8 @@ export class FileService {
       const folder = await this.em.findOneOrFail(Folder, folderId);
       fs.rmSync(folder.absolutePath, { recursive: true });
 
+      console.log(folder.absolutePath, 'PATYH', folder);
+
       await this.em.removeAndFlush(folder);
     } catch (error) {
       console.log(error);
@@ -347,6 +276,71 @@ export class FileService {
       console.log(error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  async getNestedFolders(folderId: number) {
+    const knex = this.em.getKnex();
+
+    const nestedFolders = await knex
+      .withRecursive('folder_tree', (qb) => {
+        qb.select(
+          'cms_folders.name',
+          'cms_folders.parent_folder_id',
+          'cms_folders.id',
+          'cms_folders.absolute_path',
+        )
+          .from('cms_folders')
+          .where('cms_folders.parent_folder_id', folderId)
+          .unionAll((qb) => {
+            qb.select(
+              'cms_folders.name',
+              'cms_folders.parent_folder_id',
+              'cms_folders.id',
+              'cms_folders.absolute_path',
+            )
+              .from('cms_folders')
+              .join(
+                'folder_tree',
+                'folder_tree.id',
+                'cms_folders.parent_folder_id',
+              );
+          });
+      })
+      .select('*')
+      .from('folder_tree');
+
+    return nestedFolders;
+  }
+  async getAbsolutePath(folderId: number | null, name: string) {
+    let absolutePath = path.join(process.cwd(), 'files');
+    if (folderId) {
+      const knex = this.em.getKnex();
+      const result = await knex
+        .withRecursive('ancestors', (qb) => {
+          qb.select('cms_folders.name', 'cms_folders.parent_folder_id')
+            .from('cms_folders')
+            .where('cms_folders.id', folderId)
+            .unionAll((qb) => {
+              qb.select('cms_folders.name', 'cms_folders.parent_folder_id')
+                .from('cms_folders')
+                .join(
+                  'ancestors',
+                  'ancestors.parent_folder_id',
+                  'cms_folders.id',
+                );
+            });
+        })
+        .select('*')
+        .from('ancestors');
+
+      const relativePath = result
+        .reverse()
+        .reduce((acc, currentValue) => acc + `/${currentValue.name}`, ``);
+      absolutePath = path.join(absolutePath, relativePath, name);
+    } else {
+      absolutePath = path.join(absolutePath, name);
+    }
+    return absolutePath;
   }
 }
 

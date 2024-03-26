@@ -24,7 +24,7 @@ export class Folder extends BaseEntity {
   @Property()
   absolutePath: string;
 
-  @ManyToOne({ nullable: true, cascade: [Cascade.REMOVE] })
+  @ManyToOne({ nullable: true })
   parentFolder: Folder;
 
   @OneToMany({
