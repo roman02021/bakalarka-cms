@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from 'src/types/user';
-import { CollectionMetadata } from './entities/collectionMetadata.entity';
+import { Collection } from './entities/collection.entity';
 import { AttributeService } from '../attribute/attribute.service';
 
 @Injectable()
@@ -17,12 +17,24 @@ export class CollectionService {
 
       if (await knex.schema.hasTable(createCollectionDto.name)) {
         return new HttpException(
-          'Route already exists.',
+          'Collection already exists.',
           HttpStatus.BAD_REQUEST,
         );
       }
 
       await knex.transaction(async (trx) => {
+        const collection = await trx(
+          this.em.getMetadata(Collection).tableName,
+        ).insert({
+          name: createCollectionDto.name,
+          created_by: user.id,
+          created_at: new Date(),
+          updated_at: new Date(),
+          display_name: createCollectionDto.displayName,
+        });
+
+        console.log(collection, 'yo');
+
         await trx.schema.createTable(createCollectionDto.name, (table) => {
           table.increments('id').primary();
           table.integer('created_by').unsigned().references('cms_users.id');
@@ -35,14 +47,6 @@ export class CollectionService {
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db
-
-        await trx(this.em.getMetadata(CollectionMetadata).tableName).insert({
-          collection_name: createCollectionDto.name,
-          created_by: user.id,
-          created_at: new Date(),
-          updated_at: new Date(),
-          display_name: createCollectionDto.displayName,
-        });
       });
 
       return `Created collection : ${createCollectionDto.name}`;
@@ -57,26 +61,41 @@ export class CollectionService {
       );
     }
   }
-  async getAllCollections() {
-    const collections = await this.em
-      .createQueryBuilder(CollectionMetadata)
-      .select('*');
+  async getCollectionById(collectionId: number) {
+    const collections = await this.em.findOneOrFail(Collection, collectionId);
+
+    console.log(collections);
 
     return collections;
   }
-  async deleteCollection(collection: string) {
+  async getAllCollections() {
+    const collections = await this.em
+      .createQueryBuilder(Collection)
+      .select('*');
+
+    console.log(collections);
+
+    return collections;
+  }
+  async deleteCollection(collectionId: number) {
     try {
       const knex = this.em.getKnex();
 
-      await knex.transaction(async (trx) => {
-        await trx.schema.dropTableIfExists(collection);
+      const collection = await this.em.findOneOrFail(Collection, collectionId);
 
-        await trx(this.em.getMetadata(CollectionMetadata).tableName)
-          .where('collection_name', collection)
+      console.log(collection, 'yooo');
+
+      await knex.transaction(async (trx) => {
+        await trx.schema.dropTableIfExists(collection.name);
+
+        console.log(this.em.getMetadata(Collection).tableName);
+
+        await trx(this.em.getMetadata(Collection).tableName)
+          .where('name', collection.name)
           .del();
       });
 
-      return `Collection deleted: ${collection}`;
+      return `Collection deleted: ${collection.name}`;
     } catch (error) {
       return new HttpException(
         'Something went wrong.',

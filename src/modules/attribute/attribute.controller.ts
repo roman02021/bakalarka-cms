@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Post,
   UseGuards,
@@ -24,6 +25,10 @@ export class AttributeController {
       collection,
       createAttributesDto,
     );
+  }
+  @Get('/:collectionId')
+  getAttributes(@Param('collectionId') collectionId: number) {
+    return this.attributeService.getAttributes(collectionId);
   }
   @Delete('/:collection/:columnName')
   createAttribute(

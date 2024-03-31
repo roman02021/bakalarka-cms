@@ -21,14 +21,19 @@ export class CollectionController {
     console.log('collection api route constructed');
   }
 
-  @Get('/all')
+  @Get('/')
   getAllCollections() {
     return this.collectionService.getAllCollections();
   }
 
-  @Delete('/:collection')
-  deleteCollection(@Param('collection') collection: string) {
-    return this.collectionService.deleteCollection(collection);
+  @Get('/:collectionId')
+  getAllCollection(@Param('collectionId') collectionId: number) {
+    return this.collectionService.getCollectionById(collectionId);
+  }
+
+  @Delete('/:collectionId')
+  deleteCollection(@Param('collectionId') collectionId: number) {
+    return this.collectionService.deleteCollection(collectionId);
   }
 
   @Post('/')

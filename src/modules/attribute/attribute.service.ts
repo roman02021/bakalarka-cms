@@ -22,19 +22,7 @@ export class AttributeService {
     try {
       await knex.schema.table(collection, (table) => {
         createAttributesDto.attributes.map((attribute) => {
-          if (attribute.type === 'string') {
-            table.string(attribute.name);
-          } else if (attribute.type === 'decimal') {
-            table.decimal(attribute.name);
-          } else if (attribute.type === 'integer') {
-            table.integer(attribute.name);
-          } else if (attribute.type === 'relation') {
-            console.log(attribute);
-            table
-              .foreign(attribute.name)
-              .references(attribute.referencedColumn)
-              .inTable(attribute.referencedTable);
-          }
+          this.addColumnToTable(table, attribute);
         });
       });
       return `Attributes created`;
@@ -49,18 +37,32 @@ export class AttributeService {
       );
     }
   }
-  addColumnToTable(table: Knex.CreateTableBuilder, attribute: Attribute) {
+  async addColumnToTable(table: Knex.AlterTableBuilder, attribute: Attribute) {
     try {
-      console.log(table, attribute);
       if (attribute.type === 'string') {
         table.string(attribute.name);
       } else if (attribute.type === 'decimal') {
         table.decimal(attribute.name);
       } else if (attribute.type === 'integer') {
         table.integer(attribute.name);
+      } else if (attribute.type === 'relation') {
+        // const referencedTableExists = await knex.schema.hasTable(
+        //   attribute.referencedTable,
+        // );
+        // console.log(referencedTableExists);
+        // if (!referencedTableExists) {
+        //   return new HttpException(
+        //     'Referenced table does not exist.',
+        //     HttpStatus.BAD_REQUEST,
+        //   );
+        // }
+        table.integer(`${attribute.referencedTable}_id`).notNullable();
+        table
+          .foreign(`${attribute.referencedTable}_id`)
+          .references(attribute.referencedColumn)
+          .inTable(attribute.referencedTable);
       }
     } catch (error) {
-      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,
@@ -70,6 +72,8 @@ export class AttributeService {
       );
     }
   }
+
+  async getAttributes(collectionId) {}
 
   async deleteColumn(collection: string, columnName: string) {
     const knex = this.em.getKnex();

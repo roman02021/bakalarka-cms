@@ -1,8 +1,13 @@
 import { Entity, Property } from '@mikro-orm/core';
 import { BaseEntity } from '../../shared/base.entity';
+import { Attribute } from 'src/types/attribute';
+
+class Schema {
+  attributes: Attribute[];
+}
 
 @Entity({ tableName: 'cms_collections' })
-export class CollectionMetadata extends BaseEntity {
+export class Collection extends BaseEntity {
   @Property()
   createdBy: number;
 
@@ -10,5 +15,5 @@ export class CollectionMetadata extends BaseEntity {
   displayName: string;
 
   @Property()
-  collectionName: string;
+  name: string;
 }
