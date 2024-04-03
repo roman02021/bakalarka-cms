@@ -1,15 +1,7 @@
-import {
-  Cascade,
-  Entity,
-  ManyToOne,
-  Opt,
-  OptionalProps,
-  Property,
-} from '@mikro-orm/core';
+import { Cascade, Entity, ManyToOne, Opt, Property } from '@mikro-orm/core';
 import { Folder } from './folder.entity';
 import { User } from '../../user/entities/user.entity';
 import { BaseEntity } from '../../shared/base.entity';
-import path from 'path';
 @Entity({ tableName: 'cms_files' })
 export class File extends BaseEntity {
   @Property({ unsigned: true })

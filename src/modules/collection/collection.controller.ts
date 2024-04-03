@@ -13,6 +13,7 @@ import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionService } from './collection.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
+import { Collection } from './entities/collection.entity';
 
 @Controller('collection')
 @UseGuards(AuthGuard)

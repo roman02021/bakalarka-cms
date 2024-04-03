@@ -23,21 +23,43 @@ export class CollectionService {
       }
 
       await knex.transaction(async (trx) => {
-        const collection = await trx(
-          this.em.getMetadata(Collection).tableName,
-        ).insert({
-          name: createCollectionDto.name,
-          created_by: user.id,
-          created_at: new Date(),
-          updated_at: new Date(),
-          display_name: createCollectionDto.displayName,
-        });
+        //create a collection in cms_collections
+        const collection = await trx(this.em.getMetadata(Collection).tableName)
+          .insert({
+            name: createCollectionDto.name,
+            created_by: user.id,
+            created_at: new Date(),
+            updated_at: new Date(),
+            display_name: createCollectionDto.displayName,
+          })
+          .returning('*');
 
-        console.log(collection, 'yo');
+        console.log(collection, collection[0].id);
 
+        //create attributes in cms_attributes
+        await Promise.all(
+          createCollectionDto.attributes.map(async (attribute) => {
+            await trx('cms_attributes').insert({
+              collection_id: collection[0].id,
+              name: attribute.name,
+              display_name: attribute.displayName,
+              type: attribute.type,
+              referenced_column: attribute.referencedColumn,
+              referenced_table: attribute.referencedTable,
+              created_at: new Date(),
+              updated_at: new Date(),
+            });
+          }),
+        );
+
+        //create a new table with provided columns (attributes/relations)
         await trx.schema.createTable(createCollectionDto.name, (table) => {
           table.increments('id').primary();
           table.integer('created_by').unsigned().references('cms_users.id');
+          table
+            .integer('collection_id')
+            .unsigned()
+            .references('cms_collections');
           table.timestamps(true, true);
 
           createCollectionDto.attributes.map((attribute) => {
@@ -62,11 +84,27 @@ export class CollectionService {
     }
   }
   async getCollectionById(collectionId: number) {
-    const collections = await this.em.findOneOrFail(Collection, collectionId);
+    const collection = await this.em.findOneOrFail(Collection, collectionId, {
+      populate: ['attributes'],
+    });
 
-    console.log(collections);
+    // const filteredCollection = {
+    //   ...collection,
+    //   attributes: collection.attributes.map((attribute) => {
+    //     if (attribute.type === 'relation') {
+    //       return attribute;
+    //     } else {
+    //       return {
+    //         name: attribute.name,
+    //         type: attribute.type,
+    //       };
+    //     }
+    //   }),
+    // };
 
-    return collections;
+    console.log(collection);
+
+    return collection;
   }
   async getAllCollections() {
     const collections = await this.em

@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateAttributesDto } from './dto/attribute.dto';
 import { EntityManager, Knex } from '@mikro-orm/postgresql';
-import { Attribute } from 'src/types/attribute';
+import { Attribute } from '../attribute/entities/attribute.entity';
 
 @Injectable()
 export class AttributeService {
@@ -37,6 +37,7 @@ export class AttributeService {
       );
     }
   }
+
   async addColumnToTable(table: Knex.AlterTableBuilder, attribute: Attribute) {
     try {
       if (attribute.type === 'string') {
@@ -46,21 +47,25 @@ export class AttributeService {
       } else if (attribute.type === 'integer') {
         table.integer(attribute.name);
       } else if (attribute.type === 'relation') {
-        // const referencedTableExists = await knex.schema.hasTable(
-        //   attribute.referencedTable,
-        // );
-        // console.log(referencedTableExists);
-        // if (!referencedTableExists) {
-        //   return new HttpException(
-        //     'Referenced table does not exist.',
-        //     HttpStatus.BAD_REQUEST,
-        //   );
-        // }
-        table.integer(`${attribute.referencedTable}_id`).notNullable();
-        table
-          .foreign(`${attribute.referencedTable}_id`)
-          .references(attribute.referencedColumn)
-          .inTable(attribute.referencedTable);
+        if (attribute.relationType === 'oneToOne') {
+          table.integer(`${attribute.referencedTable}_id`).notNullable();
+          table
+            .foreign(`${attribute.referencedTable}_id`)
+            .references(attribute.referencedColumn)
+            .inTable(attribute.referencedTable);
+        } else if (attribute.relationType === 'oneToMany') {
+          table.integer(`${attribute.referencedTable}_id`).notNullable();
+          table
+            .foreign(`${attribute.referencedTable}_id`)
+            .references(attribute.referencedColumn)
+            .inTable(attribute.referencedTable);
+        } else if (attribute.relationType === 'manyToMany') {
+          table.integer(`${attribute.referencedTable}_id`).notNullable();
+          table
+            .foreign(`${attribute.referencedTable}_id`)
+            .references(attribute.referencedColumn)
+            .inTable(attribute.referencedTable);
+        }
       }
     } catch (error) {
       return new HttpException(
