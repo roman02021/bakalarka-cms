@@ -51,7 +51,7 @@ export class ItemsService {
   ) {
     return 'TODO';
   }
-  async getItem(collection: string, id: number) {
+  async getItem(collection: string, id: number, relationsToPopulate: string[]) {
     try {
       const knex = this.em.getKnex();
 
@@ -68,37 +68,44 @@ export class ItemsService {
       );
     }
   }
-  async getItems(collection: string) {
+  async getItems(collection: string, relationsToPopulate: string[]) {
     try {
       // const itemTest = await this.em.findAll(collection);
 
       // console.log(itemTest);
 
+      console.log(relationsToPopulate);
+
       const knex = this.em.getKnex();
 
-      const item = await knex(collection);
+      // const itemQuery = await knex('blog')
+      //   .innerJoin('author', 'author.id', '=', 'blog.author_id')
+      //   .select(knex.raw('coalesce(json_agg)'));
 
-      const attributes = await this.em.findAll(Attribute, {
-        where: {
-          collection: item[0].collection_id,
-        },
+      const test = await knex
+        .from('blog')
+        .join('author', 'blog.author_id', 'author.id')
+        .groupBy(['blog.id'])
+        .select(['blog.id', knex.raw(`json_agg(author) as authors`)]);
+
+      console.log(test);
+
+      const test2 = knex.from(collection);
+
+      relationsToPopulate.map((relation) => {
+        test2
+          .join(relation, `${collection}.${relation}_id`, `${relation}.id`)
+          .groupBy([`${collection}.id`])
+          .select(knex.raw(`json_agg(${relation}) as ${relation}`));
       });
 
-      let relations = [];
-      attributes.map(async (attribute) => {
-        if (attribute.type === 'relation') {
-          const neviem = await knex(collection).join(
-            attribute.referencedTable,
-            `${attribute.referencedTable}_id`,
-            `${attribute.referencedTable}.id`,
-          );
-          console.log(neviem, 'yoyo');
-        }
-      });
+      test2.select('blog');
 
-      console.log(item, attributes, item[0].id);
+      console.log(await test2);
 
-      return item;
+      return await test2;
+
+      return 'test';
     } catch (error) {
       console.log(error);
       return new HttpException(

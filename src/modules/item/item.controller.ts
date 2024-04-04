@@ -8,6 +8,7 @@ import {
   Delete,
   Get,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ItemsService } from './item.service';
 import { CreateItemDto } from './dto/create-item.dto';
@@ -29,15 +30,27 @@ export class ItemsController {
     const user: User = req.user;
     return this.itemsService.createItem(collection, attributes, user);
   }
-  @Get('/:collection/:id')
-  getItem(@Param('collection') collection: string, @Param('id') id: number) {
-    console.log(collection, id);
-    return this.itemsService.getItem(collection, id);
-  }
+
   @Get('/:collection')
-  getItems(@Param('collection') collection: string) {
-    return this.itemsService.getItems(collection);
+  getItems(
+    @Param('collection') collection: string,
+    @Query('populate') relationsToPopulate: string[],
+  ) {
+    console.log('yo', relationsToPopulate);
+    return this.itemsService.getItems(collection, relationsToPopulate);
   }
+
+  @Get('/:collection/:id')
+  getItem(
+    @Param('collection') collection: string,
+    @Param('id') id: number,
+    @Query('populate') relationsToPopulate: string[],
+  ) {
+    console.log('yo', relationsToPopulate);
+    console.log(collection, id);
+    return this.itemsService.getItem(collection, id, relationsToPopulate);
+  }
+
   @Put('/:collection/:id')
   updateItem(
     @Param('id') id: number,
@@ -48,6 +61,7 @@ export class ItemsController {
     const user: User = req.user;
     return this.itemsService.updateItem(collection, id, attributes, user);
   }
+
   @Delete('/:collection/:id')
   deleteItem(@Param('id') id: number, @Param('collection') collection: string) {
     return this.itemsService.deleteItem(collection, id);

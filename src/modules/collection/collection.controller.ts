@@ -8,6 +8,7 @@ import {
   Request,
   Delete,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionService } from './collection.service';
