@@ -46,6 +46,7 @@ export class CollectionService {
               type: attribute.type,
               referenced_column: attribute.referencedColumn,
               referenced_table: attribute.referencedTable,
+              relation_type: attribute.relationType,
               created_at: new Date(),
               updated_at: new Date(),
             });
@@ -62,8 +63,19 @@ export class CollectionService {
             .references('cms_collections');
           table.timestamps(true, true);
 
+          console.log(
+            createCollectionDto,
+            createCollectionDto.attributes[0].collection,
+            'yoioo',
+          );
+
           createCollectionDto.attributes.map((attribute) => {
-            this.attributeService.addColumnToTable(table, attribute);
+            this.attributeService.addColumnToTable(
+              table,
+              attribute,
+              trx,
+              createCollectionDto.name,
+            );
           });
         });
 
@@ -83,10 +95,14 @@ export class CollectionService {
       );
     }
   }
-  async getCollectionById(collectionId: number) {
-    const collection = await this.em.findOneOrFail(Collection, collectionId, {
-      populate: ['attributes'],
-    });
+  async getCollectionById(collectionId: string) {
+    const collection = await this.em.findOneOrFail(
+      Collection,
+      { name: collectionId },
+      {
+        populate: ['attributes'],
+      },
+    );
 
     // const filteredCollection = {
     //   ...collection,
@@ -115,25 +131,58 @@ export class CollectionService {
 
     return collections;
   }
-  async deleteCollection(collectionId: number) {
+  async deleteCollection(collectionName: string) {
     try {
       const knex = this.em.getKnex();
 
-      const collection = await this.em.findOneOrFail(Collection, collectionId);
+      console.log(collectionName);
 
-      console.log(collection, 'yooo');
+      // const collection = await this.em.findOneOrFail(Collection, collectionId);
+
+      if (!(await knex.schema.hasTable(collectionName))) {
+        return new HttpException(
+          "Collection doesn't exist.",
+          HttpStatus.BAD_REQUEST,
+        );
+      }
 
       await knex.transaction(async (trx) => {
-        await trx.schema.dropTableIfExists(collection.name);
+        const collection = await trx('cms_collections').where(
+          'name',
+          collectionName,
+        );
 
-        console.log(this.em.getMetadata(Collection).tableName);
+        console.log(collection, 'yoo');
 
-        await trx(this.em.getMetadata(Collection).tableName)
-          .where('name', collection.name)
-          .del();
+        // console.log(
+        //   this.em.getMetadata(Collection).tableName,
+        //   await collection.attributes.loadItems(),
+        //   'yo',
+        // );
+
+        const collectionAttributes = await trx('cms_attributes').where(
+          'collection_id',
+          collection[0].id,
+        );
+
+        console.log(collectionAttributes);
+        //Z nejakeho dovodu delete funguje az na druhy krat
+
+        for (const attribute of collectionAttributes) {
+          if (attribute.type === 'relation') {
+            await this.attributeService.deleteColumn(
+              collectionName,
+              attribute.referenced_table,
+            );
+          }
+        }
+
+        await trx('cms_collections').where('name', collectionName).del();
+
+        await trx.schema.dropTableIfExists(collectionName);
       });
 
-      return `Collection deleted: ${collection.name}`;
+      return `Collection deleted: ${collectionName}`;
     } catch (error) {
       return new HttpException(
         'Something went wrong.',

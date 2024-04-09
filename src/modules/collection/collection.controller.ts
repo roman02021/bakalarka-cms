@@ -29,12 +29,12 @@ export class CollectionController {
   }
 
   @Get('/:collectionId')
-  getAllCollection(@Param('collectionId') collectionId: number) {
+  getAllCollection(@Param('collectionId') collectionId: string) {
     return this.collectionService.getCollectionById(collectionId);
   }
 
   @Delete('/:collectionId')
-  deleteCollection(@Param('collectionId') collectionId: number) {
+  deleteCollection(@Param('collectionId') collectionId: string) {
     return this.collectionService.deleteCollection(collectionId);
   }
 

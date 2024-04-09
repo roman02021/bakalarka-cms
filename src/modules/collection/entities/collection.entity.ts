@@ -3,12 +3,14 @@ import {
   OneToMany,
   Property,
   Collection as OrmCollection,
+  Unique,
 } from '@mikro-orm/core';
 import { BaseEntity } from '../../shared/base.entity';
 // import { Attribute } from 'src/types/attribute';
 import { Attribute } from '../../attribute/entities/attribute.entity';
 
 @Entity({ tableName: 'cms_collections' })
+@Unique({ properties: ['name'] })
 export class Collection extends BaseEntity {
   @Property()
   createdBy: number;

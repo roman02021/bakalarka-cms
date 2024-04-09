@@ -11,6 +11,9 @@ export class File extends BaseEntity {
   relativePath: Opt<string>;
 
   @Property()
+  filePath: string;
+
+  @Property()
   name: string;
 
   @Property()
@@ -40,6 +43,7 @@ export class File extends BaseEntity {
     this.createdBy = createdBy;
     this.parentFolder = parentFolder;
     this.fileSize = fileSize;
+    this.filePath = this.relativePath + this.name;
   }
 }
 

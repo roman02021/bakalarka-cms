@@ -1,12 +1,13 @@
-import { Cascade, Entity, ManyToOne, Property } from '@mikro-orm/core';
+import { Cascade, Entity, ManyToOne, Property, Unique } from '@mikro-orm/core';
 import { BaseEntity } from '../../shared/base.entity';
 import { IsString, IsIn, ValidateIf, IsNotEmpty } from 'class-validator';
 import { Collection } from '../../collection/entities/collection.entity';
 
-const TYPES = ['string', 'integer', 'decimal', 'relation'];
+const TYPES = ['string', 'integer', 'decimal', 'relation', 'file'];
 const RELATIONS = ['oneToOne', 'oneToMany', 'manyToOne', 'manyToMany'];
 
 @Entity({ tableName: 'cms_attributes' })
+@Unique({ properties: ['collection', 'name'] })
 export class Attribute extends BaseEntity {
   @IsString()
   @Property()
