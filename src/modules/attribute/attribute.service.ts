@@ -31,9 +31,6 @@ export class AttributeService {
         );
       }
       await knex.transaction(async (trx) => {
-        //create a collection in cms_collections
-        console.log(fetchedCollection, 'abc');
-
         // create attributes in cms_attributes
         for (const attribute of createAttributesDto.attributes) {
           await trx('cms_attributes').insert({
@@ -64,7 +61,6 @@ export class AttributeService {
 
       return `Attributes created`;
     } catch (error) {
-      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,
@@ -166,8 +162,6 @@ export class AttributeService {
           .where('collection_id', collectionScheme[0].id)
           .andWhere('name', columnName);
 
-        console.log(attribute, 'INSIDE DELETE', columnName);
-
         if (attribute[0].type === 'relation') {
           const relationType = attribute[0].relation_type;
           const referencedColumn = attribute[0].referenced_column;
@@ -181,11 +175,6 @@ export class AttributeService {
               table.dropColumn(`${collection}_${referencedColumn}`);
             });
           } else if (relationType === 'oneToMany') {
-            console.log(
-              'OMEGA COCK',
-              attribute[0].id,
-              `${collection}_${referencedColumn}`,
-            );
             //delete attribute from attributes table
             await trx('cms_attributes').where('id', attribute[0].id).del();
 
@@ -200,7 +189,6 @@ export class AttributeService {
       });
       return `Attribute deleted`;
     } catch (error) {
-      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,

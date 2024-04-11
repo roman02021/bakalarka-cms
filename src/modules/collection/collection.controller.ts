@@ -8,20 +8,16 @@ import {
   Request,
   Delete,
   ValidationPipe,
-  Query,
 } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionService } from './collection.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
-import { Collection } from './entities/collection.entity';
 
 @Controller('collection')
 @UseGuards(AuthGuard)
 export class CollectionController {
-  constructor(private readonly collectionService: CollectionService) {
-    console.log('collection api route constructed');
-  }
+  constructor(private readonly collectionService: CollectionService) {}
 
   @Get('/')
   getAllCollections() {
@@ -45,6 +41,17 @@ export class CollectionController {
   ) {
     const user: User = req.user;
     return this.collectionService.createCollection(createCollectionDto, user);
-    return 1;
+  }
+
+  @Post('/v2')
+  createCollectionTest(
+    @Body(ValidationPipe) createCollectionDto: CreateCollectionDto,
+    @Request() req,
+  ) {
+    const user: User = req.user;
+    return this.collectionService.createCollectionTest(
+      createCollectionDto,
+      user,
+    );
   }
 }

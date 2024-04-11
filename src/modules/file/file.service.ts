@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from '../user/entities/User.entity';
-import { UploadFileDto } from './dto/upload-file.dto';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { mkdirSync } from 'fs';
 import { Folder } from './entities/folder.entity';
@@ -25,7 +24,6 @@ export class FileService {
         name: file.originalname,
         parentFolder: folderId,
       });
-      console.log(fileWithSameName, folderId, file);
 
       if (fileWithSameName) {
         fileWithSameName.fileSize = file.size;
@@ -40,8 +38,6 @@ export class FileService {
       file.originalname = `${file.originalname}`;
 
       const paths = await this.getPath(folderId, file.originalname);
-
-      // console.log(absolutePath, 'PATH');
 
       const currentUser = await this.em.findOne(User, user.id);
 
@@ -61,7 +57,6 @@ export class FileService {
 
       return insertedFile;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error, HttpStatus.CONFLICT);
     }
   }
@@ -71,8 +66,6 @@ export class FileService {
         name: createFolderDto.name,
         parentFolder: createFolderDto.parentFolder,
       });
-
-      console.log(folderWithSameName);
 
       if (folderWithSameName) {
         throw new HttpException('Folder already exists', HttpStatus.CONFLICT);
@@ -91,7 +84,6 @@ export class FileService {
         createdBy: user.id,
       });
       const insertedFolder = await this.em.insert(Folder, newFolder);
-      // console.log(absolutePath, 'inser to');
       mkdirSync(paths.absolutePath);
       return insertedFolder;
     } catch (error) {
@@ -207,14 +199,12 @@ export class FileService {
       this.em.flush();
       return folderToMove;
     } catch (error) {
-      console.log(error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
   async updateFile(updateFolderDto: UpdateFolderDto, fileId: number) {
     try {
       const file = await this.em.findOneOrFail(File, fileId);
-      console.log(file);
       const fileName = updateFolderDto.newName
         ? `${updateFolderDto.newName}.${file.extension}`
         : file.name;
@@ -256,11 +246,8 @@ export class FileService {
       const folder = await this.em.findOneOrFail(Folder, folderId);
       fs.rmSync(folder.absolutePath, { recursive: true });
 
-      console.log(folder.absolutePath, 'PATYH', folder);
-
       await this.em.removeAndFlush(folder);
     } catch (error) {
-      console.log(error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
@@ -270,7 +257,6 @@ export class FileService {
       fs.rmSync(file.absolutePath);
       this.em.removeAndFlush(file);
     } catch (error) {
-      console.log(error);
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }

@@ -11,8 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ItemsService } from './item.service';
-import { CreateItemDto } from './dto/create-item.dto';
-import { UpdateItemDto } from './dto/update-item.dto';
+
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
 
@@ -36,7 +35,6 @@ export class ItemsController {
     @Param('collection') collection: string,
     @Query('populate') relationsToPopulate: string[] = [],
   ) {
-    console.log('yo', relationsToPopulate);
     return this.itemsService.getItems(collection, relationsToPopulate);
   }
 
@@ -46,8 +44,6 @@ export class ItemsController {
     @Param('id') id: number,
     @Query('populate') relationsToPopulate: string[],
   ) {
-    console.log('yo', relationsToPopulate);
-    console.log(collection, id);
     return this.itemsService.getItem(collection, id, relationsToPopulate);
   }
   @UseGuards(AuthGuard)

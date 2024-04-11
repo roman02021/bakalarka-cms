@@ -12,7 +12,6 @@ import { AttributeModule } from './modules/attribute/attribute.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { FoldersModule } from './folders/folders.module';
-import { RelationsService } from './relations/relations.service';
 
 @Module({
   imports: [
@@ -32,6 +31,6 @@ import { RelationsService } from './relations/relations.service';
     FoldersModule,
   ],
   controllers: [CollectionController],
-  providers: [CollectionService, RelationsService],
+  providers: [CollectionService],
 })
 export class AppModule {}

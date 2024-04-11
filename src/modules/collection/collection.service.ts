@@ -4,12 +4,14 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from 'src/types/user';
 import { Collection } from './entities/collection.entity';
 import { AttributeService } from '../attribute/attribute.service';
+import { MikroORM } from '@mikro-orm/core';
 
 @Injectable()
 export class CollectionService {
   constructor(
     private readonly em: EntityManager,
     private readonly attributeService: AttributeService,
+    private readonly orm: MikroORM,
   ) {}
   async createCollection(createCollectionDto: CreateCollectionDto, user: User) {
     try {
@@ -33,8 +35,6 @@ export class CollectionService {
             display_name: createCollectionDto.displayName,
           })
           .returning('*');
-
-        console.log(collection, collection[0].id);
 
         //create attributes in cms_attributes
         await Promise.all(
@@ -63,12 +63,6 @@ export class CollectionService {
             .references('cms_collections');
           table.timestamps(true, true);
 
-          console.log(
-            createCollectionDto,
-            createCollectionDto.attributes[0].collection,
-            'yoioo',
-          );
-
           createCollectionDto.attributes.map((attribute) => {
             this.attributeService.addColumnToTable(
               table,
@@ -83,9 +77,10 @@ export class CollectionService {
         //Napr. collectionName sa nemapovalo na collection_name v db
       });
 
-      return `Created collection : ${createCollectionDto.name}`;
+      return {
+        message: `Created collection : ${createCollectionDto.name}`,
+      };
     } catch (error) {
-      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,
@@ -104,22 +99,6 @@ export class CollectionService {
       },
     );
 
-    // const filteredCollection = {
-    //   ...collection,
-    //   attributes: collection.attributes.map((attribute) => {
-    //     if (attribute.type === 'relation') {
-    //       return attribute;
-    //     } else {
-    //       return {
-    //         name: attribute.name,
-    //         type: attribute.type,
-    //       };
-    //     }
-    //   }),
-    // };
-
-    console.log(collection);
-
     return collection;
   }
   async getAllCollections() {
@@ -127,17 +106,11 @@ export class CollectionService {
       .createQueryBuilder(Collection)
       .select('*');
 
-    console.log(collections);
-
     return collections;
   }
   async deleteCollection(collectionName: string) {
     try {
       const knex = this.em.getKnex();
-
-      console.log(collectionName);
-
-      // const collection = await this.em.findOneOrFail(Collection, collectionId);
 
       if (!(await knex.schema.hasTable(collectionName))) {
         return new HttpException(
@@ -152,21 +125,10 @@ export class CollectionService {
           collectionName,
         );
 
-        console.log(collection, 'yoo');
-
-        // console.log(
-        //   this.em.getMetadata(Collection).tableName,
-        //   await collection.attributes.loadItems(),
-        //   'yo',
-        // );
-
         const collectionAttributes = await trx('cms_attributes').where(
           'collection_id',
           collection[0].id,
         );
-
-        console.log(collectionAttributes);
-        //Z nejakeho dovodu delete funguje az na druhy krat
 
         for (const attribute of collectionAttributes) {
           if (attribute.type === 'relation') {
@@ -192,5 +154,15 @@ export class CollectionService {
         },
       );
     }
+  }
+  async createCollectionTest(
+    createCollectionDto: CreateCollectionDto,
+    user: User,
+  ) {
+    this.orm.entityGenerator.generate({
+      save: true,
+      path: process.cwd() + '/my-entities',
+    });
+    return 'test';
   }
 }
