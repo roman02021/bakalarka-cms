@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RegisterDto } from '../auth/dto/register.dto';
-import { User } from './entities/User.entity';
+import { User } from './entities/user.entity';
 import { MikroORM, EntityManager } from '@mikro-orm/core';
 
 @Injectable()
