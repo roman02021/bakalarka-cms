@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { User } from '../user/entities/User.entity';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { mkdirSync } from 'fs';
 import { Folder } from './entities/folder.entity';
@@ -8,6 +7,7 @@ import { File } from './entities/file.entity';
 import * as fs from 'fs';
 import * as path from 'path';
 import { UpdateFolderDto } from './dto/update-folder.dto';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class FileService {
