@@ -11,7 +11,6 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { AttributeModule } from './modules/attribute/attribute.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { FoldersModule } from './folders/folders.module';
 
 // import { Options } from '@mikro-orm/core';
 // import { EntityGenerator } from '@mikro-orm/entity-generator';
@@ -47,7 +46,6 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
     UserModule,
     FileModule,
     AttributeModule,
-    FoldersModule,
   ],
   controllers: [CollectionController],
   providers: [CollectionService],

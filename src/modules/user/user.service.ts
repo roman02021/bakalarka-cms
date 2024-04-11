@@ -1,14 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RegisterDto } from '../auth/dto/register.dto';
 import { User } from './entities/user.entity';
-import { MikroORM, EntityManager } from '@mikro-orm/core';
+import { EntityManager } from '@mikro-orm/core';
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly orm: MikroORM,
-    private readonly em: EntityManager,
-  ) {}
+  constructor(private readonly em: EntityManager) {}
 
   async findOne(username: string): Promise<User | undefined> {
     return await this.em.findOne(User, { username });
