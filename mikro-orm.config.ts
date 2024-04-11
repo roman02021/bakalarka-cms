@@ -2,6 +2,7 @@ import { Options } from '@mikro-orm/core';
 import { EntityGenerator } from '@mikro-orm/entity-generator';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+import { ConfigModule } from '@nestjs/config';
 
 const config: Options = {
   driver: PostgreSqlDriver,
