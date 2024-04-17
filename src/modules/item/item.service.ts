@@ -1,11 +1,22 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from 'src/types/user';
 
+import { Collection } from '../collection/entities/collection.entity';
+import { RelationsService } from 'src/relations/relations.service';
+
 @Injectable()
 export class ItemsService {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly relationsService: RelationsService,
+  ) {}
   async createItem(
     collection: string,
     attributes: Record<string, any>,
@@ -20,7 +31,10 @@ export class ItemsService {
       );
 
       if (collectionMeta.length === 0) {
-        return "Collection doesn't exist";
+        return new HttpException(
+          `Collection named ${collection} does not exist`,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       await knex.transaction(async (trx) => {
@@ -42,16 +56,30 @@ export class ItemsService {
               if (collectionAttribute.type === 'relation') {
                 if (collectionAttribute.relation_type === 'oneToOne') {
                 } else if (collectionAttribute.relation_type === 'oneToMany') {
-                  await trx(collectionAttribute.referenced_table)
-                    .where(
-                      collectionAttribute.referenced_column,
-                      attributes[attribute],
-                    )
-                    .update({
-                      [`${collection}_${collectionAttribute.referenced_column}`]:
-                        itemId[0].id,
-                    }),
-                    delete attributes[attribute];
+                  if (Array.isArray(attributes[attribute])) {
+                    for (const foreginKey of attributes[attribute]) {
+                      await trx(collectionAttribute.referenced_table)
+                        .where(
+                          collectionAttribute.referenced_column,
+                          foreginKey,
+                        )
+                        .update({
+                          [`${collection}_${collectionAttribute.referenced_column}`]:
+                            itemId[0].id,
+                        });
+                    }
+                  } else {
+                    await trx(collectionAttribute.referenced_table)
+                      .where(
+                        collectionAttribute.referenced_column,
+                        attributes[attribute],
+                      )
+                      .update({
+                        [`${collection}_${collectionAttribute.referenced_column}`]:
+                          itemId[0].id,
+                      });
+                  }
+                  delete attributes[attribute];
                 } else if (collectionAttribute.relation_type === 'manyToMany') {
                   //TODO
                 }
@@ -78,6 +106,7 @@ export class ItemsService {
         message: `Created new ${collection}`,
       };
     } catch (error) {
+      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,
@@ -101,7 +130,19 @@ export class ItemsService {
       );
 
       if (collectionMeta.length === 0) {
-        return "Collection doesn't exist";
+        return new HttpException(
+          `Collection named ${collection} does not exist`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const item = await knex(collection).where('id', id);
+
+      if (item.length === 0) {
+        return new HttpException(
+          `Item with id ${id} was not found`,
+          HttpStatus.NOT_FOUND,
+        );
       }
 
       await knex.transaction(async (trx) => {
@@ -119,16 +160,24 @@ export class ItemsService {
                 if (collectionAttribute.relation_type === 'oneToOne') {
                 } else if (collectionAttribute.relation_type === 'oneToMany') {
                   if (attributes[attribute]) {
-                    for (const relationAttribute of attributes[attribute]) {
-                      await trx(collectionAttribute.referenced_table)
-                        .where(
-                          collectionAttribute.referenced_column,
-                          relationAttribute,
-                        )
-                        .update({
-                          [`${collection}_${collectionAttribute.referenced_column}`]:
-                            item[0].id,
-                        });
+                    if (Array.isArray(attributes[attribute])) {
+                      await this.relationsService.updateMultipleOneToManyRelations(
+                        trx,
+                        collectionAttribute.referenced_table,
+                        collectionAttribute.referenced_column,
+                        collection,
+                        item[0].id,
+                        attributes[attribute],
+                      );
+                    } else {
+                      await this.relationsService.updateSingleOneToManyRelation(
+                        trx,
+                        collectionAttribute.referenced_table,
+                        collectionAttribute.referenced_column,
+                        collection,
+                        item[0].id,
+                        attributes[attribute],
+                      );
                     }
                   }
 
@@ -148,7 +197,7 @@ export class ItemsService {
           }
         }
 
-        if (attributes) {
+        if (Object.keys(attributes).length) {
           await trx(collection)
             .where('id', item[0].id)
             .update({
@@ -158,9 +207,10 @@ export class ItemsService {
       });
 
       return {
-        message: 'Success',
+        message: `Item ${item[0].id}`,
       };
     } catch (error) {
+      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,
@@ -189,22 +239,29 @@ export class ItemsService {
   }
   async getItems(collection: string, relationsToPopulate: string[]) {
     try {
-      const knex = this.em.getKnex();
-
-      const collectionMeta = await knex('cms_collections').where(
-        'name',
-        collection,
+      const collectionMeta = await this.em.findOneOrFail(
+        Collection,
+        {
+          name: collection,
+        },
+        {
+          failHandler: () => new NotFoundException(),
+        },
       );
-      if (collectionMeta.length === 0) {
-        return 'Collection does not exist';
-      }
 
+      console.log('a', collectionMeta);
+
+      // if (collectionMeta.length === 0) {
+      //   return 'Collection does not exist';
+      // }
+
+      const knex = this.em.getKnex();
       const items = await knex.from(collection).select('*');
 
       await knex.transaction(async (trx) => {
         const collectionAttributes = await trx('cms_attributes').where(
           'collection_id',
-          collectionMeta[0].id,
+          collectionMeta.id,
         );
 
         const fileAttributes = collectionAttributes.filter(
@@ -220,23 +277,30 @@ export class ItemsService {
                   .select('*')
                   .where('id', item[fileAttribute.name]);
 
-                item[fileAttribute.name] = file[0].relative_path;
+                //toto zmen asi
+                item[fileAttribute.name] = 'files' + file[0].file_path;
               }
             }
 
             await Promise.all(
               relationsToPopulate.map(async (relation) => {
+                console.log(relation, 'opa', collectionMeta.name);
                 const relationAttribute = await trx('cms_attributes')
-                  .where('collection_id', collectionMeta[0].id)
+                  .where('collection_id', collectionMeta.id)
                   .andWhere('name', relation)
                   .andWhere('type', 'relation');
 
+                // this.em.map(Attribute, relationAttribute);
+
                 if (relationAttribute.length > 0) {
+                  console.log(relationAttribute[0].referenced_table, 'ayo');
                   if (relationAttribute[0].relation_type === 'oneToMany') {
-                    const foundRelation = await trx(relation)
+                    const foundRelation = await trx(
+                      relationAttribute[0].referenced_table,
+                    )
                       .select('*')
                       .where(
-                        `${collectionMeta[0].name}_${relationAttribute[0].referenced_column}`,
+                        `${collectionMeta.name}_${relationAttribute[0].referenced_column}`,
                         item.id,
                       );
 
@@ -247,6 +311,18 @@ export class ItemsService {
                   }
                 }
 
+                // for (const key in item) {
+                //   console.log(key);
+                //   return 'a';
+                // }
+
+                // const transformedItem = Object.entries(item).map(([k, v]) => [
+                //   k.toUpperCase(),
+                //   v,
+                // ]);
+
+                // console.log(transformedItem);
+
                 return item;
               }),
             );
@@ -254,15 +330,15 @@ export class ItemsService {
         );
       });
 
+      console.log(items);
+
       return items;
     } catch (error) {
-      return new HttpException(
-        'Something went wrong.',
-        HttpStatus.BAD_REQUEST,
-        {
-          cause: error,
-        },
-      );
+      if (error.response) {
+        return error.response;
+      } else {
+        return new HttpException(error, HttpStatus.BAD_REQUEST);
+      }
     }
   }
   async deleteItem(collection: string, id: number) {

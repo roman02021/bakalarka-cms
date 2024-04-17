@@ -5,6 +5,7 @@ import { User } from 'src/types/user';
 import { Collection } from './entities/collection.entity';
 import { AttributeService } from '../attribute/attribute.service';
 import { MikroORM } from '@mikro-orm/core';
+import { Attribute } from '../attribute/entities/attribute.entity';
 
 @Injectable()
 export class CollectionService {
@@ -24,6 +25,8 @@ export class CollectionService {
         );
       }
 
+      console.log(createCollectionDto, 'yoo');
+
       await knex.transaction(async (trx) => {
         //create a collection in cms_collections
         const collection = await trx(this.em.getMetadata(Collection).tableName)
@@ -39,7 +42,7 @@ export class CollectionService {
         //create attributes in cms_attributes
         await Promise.all(
           createCollectionDto.attributes.map(async (attribute) => {
-            await trx('cms_attributes').insert({
+            await trx('cms_attributes').insert<Attribute>({
               collection_id: collection[0].id,
               name: attribute.name,
               display_name: attribute.displayName,
@@ -75,12 +78,15 @@ export class CollectionService {
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db
+
+        console.log('yo');
       });
 
       return {
         message: `Created collection : ${createCollectionDto.name}`,
       };
     } catch (error) {
+      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,

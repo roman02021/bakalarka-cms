@@ -16,6 +16,8 @@ import { join } from 'path';
 // import { EntityGenerator } from '@mikro-orm/entity-generator';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
+import { ApiModule } from './api/api.module';
+import { RelationsService } from './relations/relations.service';
 
 @Module({
   imports: [
@@ -46,9 +48,10 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
     UserModule,
     FileModule,
     AttributeModule,
+    ApiModule,
   ],
   controllers: [CollectionController],
-  providers: [CollectionService],
+  providers: [CollectionService, RelationsService],
 })
 export class AppModule {}
 

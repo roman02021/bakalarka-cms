@@ -49,6 +49,7 @@ export class FileService {
         parentFolder: folderId,
         createdBy: currentUser,
       });
+      console.log(newFile, paths.relativePath, 'y', paths);
       const insertedFile = await this.em.insert(File, newFile);
 
       fs.writeFileSync(paths.absolutePath, file.buffer);
@@ -57,6 +58,7 @@ export class FileService {
 
       return insertedFile;
     } catch (error) {
+      console.log(error);
       throw new HttpException(error, HttpStatus.CONFLICT);
     }
   }

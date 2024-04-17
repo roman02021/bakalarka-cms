@@ -3,8 +3,16 @@ import { BaseEntity } from '../../shared/base.entity';
 import { IsString, IsIn, ValidateIf, IsNotEmpty } from 'class-validator';
 import { Collection } from '../../collection/entities/collection.entity';
 
-const TYPES = ['string', 'integer', 'decimal', 'relation', 'file'];
-const RELATIONS = ['oneToOne', 'oneToMany', 'manyToOne', 'manyToMany'];
+const TYPES = [
+  'text',
+  'integer',
+  'boolean',
+  'decimal',
+  'relation',
+  'image',
+  'file',
+];
+const RELATIONS = ['oneToOne', 'oneToMany', 'manyToMany'];
 
 @Entity({ tableName: 'cms_attributes' })
 @Unique({ properties: ['collection', 'name'] })

@@ -2,6 +2,7 @@ import { Cascade, Entity, ManyToOne, Opt, Property } from '@mikro-orm/core';
 import { Folder } from './folder.entity';
 import { User } from '../../user/entities/user.entity';
 import { BaseEntity } from '../../shared/base.entity';
+import { ValidateIf } from 'class-validator';
 @Entity({ tableName: 'cms_files' })
 export class File extends BaseEntity {
   @Property({ unsigned: true })
@@ -11,6 +12,7 @@ export class File extends BaseEntity {
   relativePath: Opt<string>;
 
   @Property()
+  @ValidateIf((e) => e !== '')
   filePath: string;
 
   @Property()
@@ -31,6 +33,7 @@ export class File extends BaseEntity {
   constructor(
     name: string,
     absolutePath: string,
+    relativePath: string,
     createdBy: User,
     parentFolder: Folder,
     fileSize: number,
@@ -39,11 +42,11 @@ export class File extends BaseEntity {
     this.name = name;
     this.extension = getExtension(name);
     this.absolutePath = absolutePath;
-    this.relativePath = absolutePath;
+    this.relativePath = relativePath;
     this.createdBy = createdBy;
     this.parentFolder = parentFolder;
     this.fileSize = fileSize;
-    this.filePath = this.relativePath + this.name;
+    this.filePath = '/' + this.relativePath + this.name;
   }
 }
 

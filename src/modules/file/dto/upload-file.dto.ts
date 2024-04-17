@@ -11,13 +11,15 @@ export class UploadData {
 }
 
 export class UploadFileDto {
-  file: Express.Multer.File;
+  file: File;
 
-  @Transform(({ value }) => JSON.parse(value), { toClassOnly: true })
-  @IsDefined()
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => UploadData)
-  data: UploadData;
+  parentId: number | null;
+
+  // @Transform(({ value }) => JSON.parse(value), { toClassOnly: true })
+  // @IsDefined()
+  // @IsNotEmptyObject()
+  // @IsObject()
+  // @ValidateNested()
+  // @Type(() => UploadData)
+  // data: UploadData;
 }

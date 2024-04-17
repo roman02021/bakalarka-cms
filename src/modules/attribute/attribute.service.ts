@@ -33,17 +33,7 @@ export class AttributeService {
       await knex.transaction(async (trx) => {
         // create attributes in cms_attributes
         for (const attribute of createAttributesDto.attributes) {
-          await trx('cms_attributes').insert({
-            collection_id: fetchedCollection[0].id,
-            name: attribute.name,
-            display_name: attribute.displayName,
-            type: attribute.type,
-            relation_type: attribute.relationType,
-            referenced_column: attribute.referencedColumn,
-            referenced_table: attribute.referencedTable,
-            created_at: new Date(),
-            updated_at: new Date(),
-          });
+          await this.createAttribute(trx, attribute, fetchedCollection[0].id);
         }
 
         //create columns in table or referenced table
@@ -59,7 +49,10 @@ export class AttributeService {
         });
       });
 
-      return `Attributes created`;
+      return {
+        status: 200,
+        message: `${createAttributesDto.attributes.length} attributes in ${collection} created`,
+      };
     } catch (error) {
       return new HttpException(
         'Something went wrong.',
@@ -71,6 +64,45 @@ export class AttributeService {
     }
   }
 
+  async createAttribute(
+    trx: Knex.Transaction<any, any[]>,
+    attribute: Attribute,
+    collectionId: string,
+  ) {
+    await trx('cms_attributes').insert({
+      collection_id: collectionId,
+      name: attribute.name,
+      display_name: attribute.displayName,
+      type: attribute.type,
+      relation_type: attribute.relationType,
+      referenced_column: attribute.referencedColumn,
+      referenced_table: attribute.referencedTable,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    if (attribute.relationType === 'manyToMany') {
+      //TODO
+      // const referencedCollection = await trx('cms_collections').where(
+      //   'name',
+      //   attribute.referencedTable,
+      // );
+      // if (referencedCollection.length > 0) {
+      //   await trx('cms_attributes').insert({
+      //     collection_id: referencedCollection[0].id,
+      //     name: attribute.name,
+      //     display_name: attribute.displayName,
+      //     type: attribute.type,
+      //     relation_type: attribute.relationType,
+      //     referenced_column: attribute.referencedColumn,
+      //     referenced_table: attribute.referencedTable,
+      //     created_at: new Date(),
+      //     updated_at: new Date(),
+      //   });
+      // }
+    }
+  }
+
   async addColumnToTable(
     table: Knex.AlterTableBuilder,
     attribute: Attribute,
@@ -78,7 +110,7 @@ export class AttributeService {
     collection: string,
   ) {
     try {
-      if (attribute.type === 'string') {
+      if (attribute.type === 'text') {
         table.string(attribute.name);
       } else if (attribute.type === 'decimal') {
         table.decimal(attribute.name);
@@ -104,26 +136,22 @@ export class AttributeService {
               .references('id')
               .inTable(collection);
           });
-        } else if (attribute.relationType === 'manyToOne') {
-          //TODO
         } else if (attribute.relationType === 'manyToMany') {
-          //TODO
-          trx.schema.createTable(
-            `${attribute.name}_${attribute.referencedTable}`,
-            (table) => {
-              table.integer(`${attribute.name}_id`).nullable();
-              table
-                .foreign(`${attribute.name}_id`)
-                .references('id')
-                .inTable(attribute.name);
-
-              table.integer(`${attribute.referencedTable}_id`).notNullable();
-              table
-                .foreign(`${attribute.referencedTable}_id`)
-                .references('id')
-                .inTable(attribute.referencedTable);
-            },
-          );
+          // await trx.schema.createTable(
+          //   `${collection}_${attribute.referencedTable}`,
+          //   (table) => {
+          //     table.integer(`${attribute.name}_id`).nullable();
+          //     table
+          //       .foreign(`${attribute.name}_id`)
+          //       .references('id')
+          //       .inTable(attribute.name);
+          //     table.integer(`${attribute.referencedTable}_id`).notNullable();
+          //     table
+          //       .foreign(`${attribute.referencedTable}_id`)
+          //       .references('id')
+          //       .inTable(attribute.referencedTable);
+          //   },
+          // );
         }
       } else if (attribute.type === 'file') {
         table.integer(attribute.name).nullable();
@@ -140,7 +168,7 @@ export class AttributeService {
     }
   }
 
-  async getAttributes(collectionId) {}
+  // async getAttributes(collectionId) {}
 
   async deleteColumn(collection: string, columnName: string) {
     const knex = this.em.getKnex();
@@ -177,13 +205,12 @@ export class AttributeService {
           } else if (relationType === 'oneToMany') {
             //delete attribute from attributes table
             await trx('cms_attributes').where('id', attribute[0].id).del();
-
             //remove relation column from collection table
             await trx.schema.alterTable(referencedTable, (table) => {
               table.dropColumn(`${collection}_${referencedColumn}`);
             });
-          } else if (relationType === 'manyToOne') {
-            return 'TODO';
+          } else if (relationType === 'manyToMany') {
+            await trx('cms_attributes').where('id', attribute[0].id).del();
           }
         }
       });

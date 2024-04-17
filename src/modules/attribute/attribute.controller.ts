@@ -10,6 +10,7 @@ import {
 import { AttributeService } from './attribute.service';
 import { CreateAttributesDto } from './dto/attribute.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { Attribute } from './entities/attribute.entity';
 
 @Controller('attribute')
 @UseGuards(AuthGuard)
@@ -26,10 +27,10 @@ export class AttributeController {
       createAttributesDto,
     );
   }
-  @Get('/:collectionId')
-  getAttributes(@Param('collectionId') collectionId: number) {
-    return this.attributeService.getAttributes(collectionId);
-  }
+  // @Get('/:collectionId')
+  // getAttributes(@Param('collectionId') collectionId: number) {
+  //   return this.attributeService.getAttributes(collectionId);
+  // }
   @Delete('/:collection/:columnName')
   createAttribute(
     @Param('collection') collection: string,

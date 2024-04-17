@@ -20,24 +20,31 @@ import { User } from '../user/entities/user.entity';
 import { UploadFileDto } from './dto/upload-file.dto';
 import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
-import { ValidationPipe } from '@nestjs/common';
 
 @Controller('file')
 @UseGuards(AuthGuard)
 export class FileController {
   constructor(private fileService: FileService) {}
 
+  @Post('upload/:folderId')
+  @UseInterceptors(FileInterceptor('file'))
+  // @UsePipes(new ValidationPipe({ transform: true }))
+  uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req,
+    @Param('folderId') folderId: number,
+  ) {
+    const user: User = req.user;
+    console.log(file);
+    return this.fileService.saveFile(file, user, folderId);
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  @UsePipes(new ValidationPipe({ transform: true }))
-  uploadFile(
-    @UploadedFile(new ParseFilePipe({})) file: Express.Multer.File,
-    @Request() req,
-    @Body() uploadFileDto: UploadFileDto,
-  ) {
-    // console.log(uploadFileDto.folderId);
+  // @UsePipes(new ValidationPipe({ transform: true }))
+  uploadFileToRoot(@UploadedFile() file: Express.Multer.File, @Request() req) {
     const user: User = req.user;
-    return this.fileService.saveFile(file, user, uploadFileDto.data.folderId);
+    return this.fileService.saveFile(file, user, null);
   }
 
   @Post('folder')
