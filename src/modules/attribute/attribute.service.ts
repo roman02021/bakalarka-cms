@@ -173,6 +173,8 @@ export class AttributeService {
   async deleteColumn(collection: string, columnName: string) {
     const knex = this.em.getKnex();
 
+    console.log(collection);
+
     if (!(await knex.schema.hasTable(collection))) {
       return new HttpException(
         'Collection does not exist',
@@ -212,17 +214,15 @@ export class AttributeService {
           } else if (relationType === 'manyToMany') {
             await trx('cms_attributes').where('id', attribute[0].id).del();
           }
+        } else {
+          await trx('cms_attributes').where('id', attribute[0].id).del();
         }
       });
-      return `Attribute deleted`;
+      return {
+        message: `Attribute ${columnName} in ${collection} was deleted`,
+      };
     } catch (error) {
-      return new HttpException(
-        'Something went wrong.',
-        HttpStatus.BAD_REQUEST,
-        {
-          cause: error,
-        },
-      );
+      return new HttpException('Something went wrong.', HttpStatus.BAD_REQUEST);
     }
   }
 }

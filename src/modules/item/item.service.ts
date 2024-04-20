@@ -9,7 +9,7 @@ import { EntityManager } from '@mikro-orm/postgresql';
 import { User } from 'src/types/user';
 
 import { Collection } from '../collection/entities/collection.entity';
-import { RelationsService } from 'src/relations/relations.service';
+import { RelationsService } from '../../relations/relations.service';
 
 @Injectable()
 export class ItemsService {
@@ -249,12 +249,6 @@ export class ItemsService {
         },
       );
 
-      console.log('a', collectionMeta);
-
-      // if (collectionMeta.length === 0) {
-      //   return 'Collection does not exist';
-      // }
-
       const knex = this.em.getKnex();
       const items = await knex.from(collection).select('*');
 
@@ -310,18 +304,6 @@ export class ItemsService {
                     }
                   }
                 }
-
-                // for (const key in item) {
-                //   console.log(key);
-                //   return 'a';
-                // }
-
-                // const transformedItem = Object.entries(item).map(([k, v]) => [
-                //   k.toUpperCase(),
-                //   v,
-                // ]);
-
-                // console.log(transformedItem);
 
                 return item;
               }),

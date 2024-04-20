@@ -25,8 +25,6 @@ export class CollectionService {
         );
       }
 
-      console.log(createCollectionDto, 'yoo');
-
       await knex.transaction(async (trx) => {
         //create a collection in cms_collections
         const collection = await trx(this.em.getMetadata(Collection).tableName)
@@ -58,6 +56,7 @@ export class CollectionService {
 
         //create a new table with provided columns (attributes/relations)
         await trx.schema.createTable(createCollectionDto.name, (table) => {
+          console.log('CREATING', table);
           table.increments('id').primary();
           table.integer('created_by').unsigned().references('cms_users.id');
           table
@@ -78,8 +77,6 @@ export class CollectionService {
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db
-
-        console.log('yo');
       });
 
       return {
@@ -87,13 +84,7 @@ export class CollectionService {
       };
     } catch (error) {
       console.log(error);
-      return new HttpException(
-        'Something went wrong.',
-        HttpStatus.BAD_REQUEST,
-        {
-          cause: error,
-        },
-      );
+      return new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
   async getCollectionById(collectionId: string) {

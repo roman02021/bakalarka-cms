@@ -11,6 +11,7 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { AttributeModule } from './modules/attribute/attribute.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { SeedManager } from '@mikro-orm/seeder';
 
 // import { Options } from '@mikro-orm/core';
 // import { EntityGenerator } from '@mikro-orm/entity-generator';
@@ -18,6 +19,7 @@ import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { ApiModule } from './api/api.module';
 import { RelationsService } from './relations/relations.service';
+import { EntityGenerator } from '@mikro-orm/entity-generator';
 
 @Module({
   imports: [
@@ -25,17 +27,40 @@ import { RelationsService } from './relations/relations.service';
     MikroOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        driver: PostgreSqlDriver,
-        dbName: configService.get('DB_NAME'),
-        host: configService.get('DB_HOST'),
-        port: configService.get('DB_PORT'),
-        user: configService.get('DB_USER'),
-        password: configService.get('DB_PASSWORD'),
-        entities: ['dist/**/*.entity.js'],
-        entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
-        metadataProvider: TsMorphMetadataProvider,
-      }),
+      useFactory: (configService: ConfigService) => {
+        if (configService.get('NODE_ENV') === 'test') {
+          console.log(
+            configService.get('DB_NAME_TEST'),
+            configService.get('NODE_ENV'),
+            configService.get('DB_USER_TEST'),
+          );
+          return {
+            driver: PostgreSqlDriver,
+            dbName: configService.get('DB_NAME_TEST'),
+            host: configService.get('DB_HOST_TEST'),
+            port: configService.get('DB_PORT_TEST'),
+            user: configService.get('DB_USER_TEST'),
+            password: configService.get('DB_PASSWORD_TEST'),
+            entities: ['dist/**/*.entity.js'],
+            entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
+            metadataProvider: TsMorphMetadataProvider,
+            extensions: [EntityGenerator, SeedManager],
+            tsNode: false,
+          };
+        }
+        return {
+          driver: PostgreSqlDriver,
+          dbName: configService.get('DB_NAME'),
+          host: configService.get('DB_HOST'),
+          port: configService.get('DB_PORT'),
+          user: configService.get('DB_USER'),
+          password: configService.get('DB_PASSWORD'),
+          entities: ['dist/**/*.entity.js'],
+          entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
+          metadataProvider: TsMorphMetadataProvider,
+          extensions: [EntityGenerator],
+        };
+      },
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../files'),

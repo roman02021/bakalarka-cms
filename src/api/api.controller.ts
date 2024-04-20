@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
-import { ItemsService } from 'src/modules/item/item.service';
+import { ItemsService } from '../modules/item/item.service';
 import { ApiInterceptor } from './api.interceptor';
 
 @Controller('api')
