@@ -17,13 +17,15 @@ import { SeedManager } from '@mikro-orm/seeder';
 // import { EntityGenerator } from '@mikro-orm/entity-generator';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
-import { ApiModule } from './api/api.module';
+import { ApiModule } from './modules/api/api.module';
 import { RelationsService } from './relations/relations.service';
 import { EntityGenerator } from '@mikro-orm/entity-generator';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     MikroOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -79,24 +81,3 @@ import { EntityGenerator } from '@mikro-orm/entity-generator';
   providers: [CollectionService, RelationsService],
 })
 export class AppModule {}
-
-// const config: Options = {
-//   driver: PostgreSqlDriver,
-//   dbName: 'test_db',
-//   host: 'localhost',
-//   port: 5432,
-//   user: 'test_user',
-//   password: 'test_password',
-//   entities: ['dist/**/*.entity.js'],
-//   entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
-//   metadataProvider: TsMorphMetadataProvider,
-//   debug: true,
-//   schemaGenerator: {
-//     disableForeignKeys: true,
-//     createForeignKeyConstraints: true,
-//     ignoreSchema: [],
-//   },
-//   extensions: [EntityGenerator],
-// };
-
-// export default config;

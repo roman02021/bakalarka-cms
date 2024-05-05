@@ -12,6 +12,8 @@ export class AttributeService {
   ) {
     const knex = this.em.getKnex();
 
+    console.log(collection, await knex.schema.hasTable(collection));
+
     if (!(await knex.schema.hasTable(collection))) {
       return new HttpException(
         "Collection doesn't exist.",
@@ -111,11 +113,23 @@ export class AttributeService {
   ) {
     try {
       if (attribute.type === 'text') {
-        table.string(attribute.name);
+        if (attribute.isRequired) {
+          table.string(attribute.name).notNullable();
+        } else {
+          table.string(attribute.name).nullable();
+        }
       } else if (attribute.type === 'decimal') {
-        table.decimal(attribute.name);
+        if (attribute.isRequired) {
+          table.decimal(attribute.name).notNullable();
+        } else {
+          table.decimal(attribute.name).nullable();
+        }
       } else if (attribute.type === 'integer') {
-        table.integer(attribute.name);
+        if (attribute.isRequired) {
+          table.integer(attribute.name).notNullable();
+        } else {
+          table.integer(attribute.name).nullable();
+        }
       } else if (attribute.type === 'relation') {
         if (attribute.relationType === 'oneToOne') {
           table.integer(`${attribute.referencedTable}_id`);
@@ -137,25 +151,84 @@ export class AttributeService {
               .inTable(collection);
           });
         } else if (attribute.relationType === 'manyToMany') {
-          // await trx.schema.createTable(
-          //   `${collection}_${attribute.referencedTable}`,
-          //   (table) => {
-          //     table.integer(`${attribute.name}_id`).nullable();
-          //     table
-          //       .foreign(`${attribute.name}_id`)
-          //       .references('id')
-          //       .inTable(attribute.name);
-          //     table.integer(`${attribute.referencedTable}_id`).notNullable();
-          //     table
-          //       .foreign(`${attribute.referencedTable}_id`)
-          //       .references('id')
-          //       .inTable(attribute.referencedTable);
-          //   },
+          // const referencedCollection = await trx('cms_collections').where(
+          //   'name',
+          //   attribute.referencedTable,
           // );
+          // const thisCollection = await trx('cms_collections').where(
+          //   'name',
+          //   collection,
+          // );
+
+          // console.log('yooo', referencedCollection, thisCollection);
+
+          // if (
+          //   referencedCollection.length === 0 ||
+          //   thisCollection.length === 0
+          // ) {
+          //   return new HttpException(
+          //     "Referenced collection doesn't exist.",
+          //     HttpStatus.BAD_REQUEST,
+          //   );
+          // }
+
+          // table
+          //   .integer(`${attribute.referencedTable}_id`)
+          //   .defaultTo(referencedCollection[0].id);
+          // table
+          //   .foreign(`${attribute.referencedTable}_id`)
+          //   .references('id')
+          //   .inTable('cms_collections');
+          // await trx.schema.alterTable(attribute.referencedTable, (table) => {
+          //   table.integer(`${collection}_id`).defaultTo(thisCollection[0].id);
+          //   table
+          //     .foreign(`${collection}_id`)
+          //     .references('id')
+          //     .inTable('cms_collections');
+          // });
+
+          await trx.schema.createTable(
+            `${collection}_${attribute.referencedTable}`,
+            (table) => {
+              console.log(table);
+              table.integer(`${collection}_id`);
+              table
+                .foreign(`${collection}_id`)
+                .references('id')
+                .inTable(collection);
+              console.log('MERAB');
+              table.integer(`${attribute.referencedTable}_id`);
+              console.log('MERAB2');
+              table
+                .foreign(`${attribute.referencedTable}_id`)
+                .references('id')
+                .inTable(attribute.referencedTable);
+            },
+          );
+
+          console.log('yooo', 'mebab');
         }
-      } else if (attribute.type === 'file') {
-        table.integer(attribute.name).nullable();
+      } else if (attribute.type === 'image') {
+        if (attribute.isRequired) {
+          table.integer(attribute.name).notNullable();
+        } else {
+          table.integer(attribute.name).nullable();
+        }
+
         table.foreign(attribute.name).references('id').inTable('cms_files');
+      } else if (attribute.type === 'file') {
+        if (attribute.isRequired) {
+          table.integer(attribute.name).notNullable();
+        } else {
+          table.integer(attribute.name).nullable();
+        }
+        table.foreign(attribute.name).references('id').inTable('cms_files');
+      } else if (attribute.type === 'boolean') {
+        if (attribute.isRequired) {
+          table.boolean(attribute.name).notNullable();
+        } else {
+          table.boolean(attribute.name).nullable();
+        }
       }
     } catch (error) {
       return new HttpException(
@@ -212,7 +285,7 @@ export class AttributeService {
               table.dropColumn(`${collection}_${referencedColumn}`);
             });
           } else if (relationType === 'manyToMany') {
-            await trx('cms_attributes').where('id', attribute[0].id).del();
+            await trx.schema.dropTable(`${collection}_${referencedTable}`);
           }
         } else {
           await trx('cms_attributes').where('id', attribute[0].id).del();

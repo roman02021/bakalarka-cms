@@ -15,11 +15,11 @@ import { ItemsService } from './item.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
 
+@UseGuards(AuthGuard)
 @Controller('item')
 export class ItemsController {
   constructor(private readonly itemsService: ItemsService) {}
 
-  @UseGuards(AuthGuard)
   @Post('/:collection')
   createItem(
     @Param('collection') collection: string,
@@ -29,7 +29,6 @@ export class ItemsController {
     const user: User = req.user;
     return this.itemsService.createItem(collection, attributes, user);
   }
-  @UseGuards(AuthGuard)
   @Get('/:collection')
   getItems(
     @Param('collection') collection: string,
@@ -37,7 +36,6 @@ export class ItemsController {
   ) {
     return this.itemsService.getItems(collection, relationsToPopulate);
   }
-  @UseGuards(AuthGuard)
   @Get('/:collection/:id')
   getItem(
     @Param('collection') collection: string,
@@ -46,7 +44,6 @@ export class ItemsController {
   ) {
     return this.itemsService.getItem(collection, id, relationsToPopulate);
   }
-  @UseGuards(AuthGuard)
   @Put('/:collection/:id')
   updateItem(
     @Param('id') id: number,
@@ -55,7 +52,6 @@ export class ItemsController {
   ) {
     return this.itemsService.updateItem(collection, id, attributes);
   }
-  @UseGuards(AuthGuard)
   @Delete('/:collection/:id')
   deleteItem(@Param('id') id: number, @Param('collection') collection: string) {
     return this.itemsService.deleteItem(collection, id);

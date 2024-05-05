@@ -12,7 +12,7 @@ import { Attribute } from '../../attribute/entities/attribute.entity';
 @Entity({ tableName: 'cms_collections' })
 @Unique({ properties: ['name'] })
 export class Collection extends BaseEntity {
-  @Property()
+  @Property({ name: 'created_by' })
   createdBy: number;
 
   @Property({ name: 'display_name' })
@@ -26,4 +26,11 @@ export class Collection extends BaseEntity {
     mappedBy: 'collection',
   })
   attributes = new OrmCollection<Attribute>(this);
+
+  constructor(name: string, displayName: string, createdBy: number) {
+    super();
+    this.name = name;
+    this.displayName = displayName;
+    this.createdBy = createdBy;
+  }
 }

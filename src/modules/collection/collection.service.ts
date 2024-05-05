@@ -27,36 +27,63 @@ export class CollectionService {
 
       await knex.transaction(async (trx) => {
         //create a collection in cms_collections
-        const collection = await trx(this.em.getMetadata(Collection).tableName)
-          .insert({
-            name: createCollectionDto.name,
-            created_by: user.id,
-            created_at: new Date(),
-            updated_at: new Date(),
-            display_name: createCollectionDto.displayName,
-          })
-          .returning('*');
+
+        const newCollection = this.em.create(Collection, {
+          name: createCollectionDto.name,
+          displayName: createCollectionDto.displayName,
+          createdBy: user.id,
+        });
+
+        // const collection = await trx('cms_collections').insert<Collection>(
+        //   newCollection,
+        // );
+
+        this.em.persist(newCollection);
+
+        // const collection = await trx(this.em.getMetadata(Collection).tableName)
+        //   .insert({
+        //     name: createCollectionDto.name,
+        //     created_by: user.id,
+        //     created_at: new Date(),
+        //     updated_at: new Date(),
+        //     display_name: createCollectionDto.displayName,
+        //   })
+        //   .returning('*');
 
         //create attributes in cms_attributes
-        await Promise.all(
-          createCollectionDto.attributes.map(async (attribute) => {
-            await trx('cms_attributes').insert<Attribute>({
-              collection_id: collection[0].id,
-              name: attribute.name,
-              display_name: attribute.displayName,
-              type: attribute.type,
-              referenced_column: attribute.referencedColumn,
-              referenced_table: attribute.referencedTable,
-              relation_type: attribute.relationType,
-              created_at: new Date(),
-              updated_at: new Date(),
-            });
-          }),
-        );
+        for (const attribute of createCollectionDto.attributes) {
+          const newAttribute = new Attribute(
+            attribute.displayName,
+            attribute.name,
+            attribute.type,
+            newCollection,
+            attribute.isRequired,
+            attribute.relationType,
+            attribute.referencedColumn,
+            attribute.referencedTable,
+          );
+          this.em.persist(newAttribute);
+          // await trx('cms_attributes').insert<Attribute>(newAttribute);
+        }
+        // await Promise.all(
+        //   createCollectionDto.attributes.map(async (attribute) => {
+        //     const newAttribute = new Attribute(
+        //       attribute.displayName,
+        //       attribute.name,
+        //       attribute.type,
+        //       collection[0].id,
+        //       attribute.isRequired,
+        //       attribute.relationType,
+        //       attribute.referencedColumn,
+        //       attribute.referencedTable,
+        //     );
+        //     await trx('cms_attributes').insert<Attribute>(newAttribute);
+        //   }),
+        // );
 
         //create a new table with provided columns (attributes/relations)
         await trx.schema.createTable(createCollectionDto.name, (table) => {
-          console.log('CREATING', table);
+          // console.log('CREATING', table);
           table.increments('id').primary();
           table.integer('created_by').unsigned().references('cms_users.id');
           table
@@ -65,15 +92,27 @@ export class CollectionService {
             .references('cms_collections');
           table.timestamps(true, true);
 
-          createCollectionDto.attributes.map((attribute) => {
+          for (const attribute of createCollectionDto.attributes) {
             this.attributeService.addColumnToTable(
               table,
               attribute,
               trx,
               createCollectionDto.name,
             );
-          });
+            console.log(attribute);
+          }
+
+          // createCollectionDto.attributes.map((attribute) => {
+          //   this.attributeService.addColumnToTable(
+          //     table,
+          //     attribute,
+          //     trx,
+          //     createCollectionDto.name,
+          //   );
+          // });
         });
+
+        await this.em.flush();
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db

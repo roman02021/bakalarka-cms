@@ -1,8 +1,9 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { RegisterDto } from '../auth/dto/register.dto';
 import { User } from './entities/user.entity';
-import { EntityManager } from '@mikro-orm/core';
-
+import { EntityManager } from '@mikro-orm/postgresql';
+import { validate } from 'class-validator';
+import { buildError } from '../shared/utils';
 @Injectable()
 export class UserService {
   constructor(private readonly em: EntityManager) {}
@@ -10,13 +11,25 @@ export class UserService {
   async findOne(username: string): Promise<User | undefined> {
     return await this.em.findOne(User, { username });
   }
-  async register(registerDto: RegisterDto): Promise<User | undefined> {
-    const newUser = this.em.create(User, registerDto);
+  async register(registerDto: RegisterDto): Promise<string | undefined> {
     try {
-      const registeredUser = await this.em.upsert(newUser);
-      return registeredUser;
+      const newUser = this.em.create(User, registerDto);
+      const errors = await validate(newUser);
+      console.log(errors, 'errs');
+      if (errors.length > 0) {
+        throw new HttpException(
+          {
+            message: 'Validation failed',
+            errors: buildError(errors),
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      await this.em.persistAndFlush(newUser);
+      return 'Account created';
     } catch (error) {
-      throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+      throw new HttpException(error, HttpStatus.CONFLICT);
     }
   }
 }

@@ -1,41 +1,66 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AuthModule } from '../src/modules/auth/auth.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MikroOrmModule, getEntityManagerToken } from '@mikro-orm/nestjs';
-import {
-  EntityManager,
-  MikroORM,
-  PostgreSqlDriver,
-} from '@mikro-orm/postgresql';
+
 import { AppModule } from '../src/app.module';
+import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { MikroORM } from '@mikro-orm/core';
+import { User } from 'src/modules/user/entities/user.entity';
+// import { LoginDto } from 'src/modules/auth/dto/login.dto';
+// import { RegisterDto } from 'src/modules/auth/dto/reg.dto';
+
+const registerData = {
+  name: 'Test Testovsky',
+  email: 'testa',
+  username: 'test',
+  password: 'test',
+};
+
+const loginData = {
+  username: 'test',
+  password: 'test',
+};
 
 describe('AuthService', () => {
   let app: INestApplication;
-  let orm: EntityManager;
+  let orm: MikroORM;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleRef.createNestApplication();
-    await app.get(MikroORM).getSchemaGenerator().updateSchema();
     await app.init();
+
+    orm = app.get(MikroORM);
+  });
+
+  beforeEach(async () => {
+    await orm.getSchemaGenerator().refreshDatabase();
+    await orm.getSchemaGenerator().clearDatabase();
+  });
+
+  afterAll(async () => {
+    await orm.close();
+    await app.close();
   });
 
   it('/POST register', async () => {
-    return request(app.getHttpServer())
+    return await request(app.getHttpServer())
       .post('/auth/register')
-      .send({
-        name: 'testABACUS',
-        email: 'testa',
-        username: 'test',
-        password: 'test',
-      })
+      .send(registerData)
       .expect('Content-Type', /json/)
-      .expect(201);
+      .expect(HttpStatus.CREATED);
+  });
+  it('/POST login', async () => {
+    const res: request.Response = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send(loginData)
+      .expect('Content-Type', /json/)
+      .expect(HttpStatus.OK);
+
+    expect(res.body.access_token).toBeDefined();
   });
 });

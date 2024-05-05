@@ -45,4 +45,35 @@ export class RelationsService {
         });
     }
   }
+  async addRelation(
+    trx: Knex.Transaction<any, any[]>,
+    relationType: string,
+    referencedColumn: string,
+    referencedTable: string,
+    collection: string,
+    itemId: number,
+    keys: number[] | number,
+  ) {
+    if (relationType === 'oneToOne') {
+    } else if (relationType === 'oneToMany') {
+      if (Array.isArray(keys)) {
+        for (const foreginKey of keys) {
+          await trx(referencedTable)
+            .where(referencedColumn, foreginKey)
+            .update({
+              [`${collection}_${referencedColumn}`]: itemId,
+            });
+        }
+      } else {
+        await trx(referencedTable)
+          .where(referencedColumn, keys)
+          .update({
+            [`${collection}_${referencedColumn}`]: itemId,
+          });
+      }
+      // delete keys;
+    } else if (relationType === 'manyToMany') {
+      //TODO
+    }
+  }
 }

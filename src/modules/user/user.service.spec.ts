@@ -1,6 +1,6 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { Module } from '@nestjs/common';
+import { INestApplication, Module } from '@nestjs/common';
 import { MikroOrmModule, getRepositoryToken } from '@mikro-orm/nestjs';
 import { MikroORM, PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { User } from './entities/user.entity';
@@ -12,6 +12,8 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 describe('UserService', () => {
   let userService: UserService;
   let orm: MikroORM;
+
+  let app: INestApplication;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
