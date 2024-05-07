@@ -66,6 +66,7 @@ export class AttributeService {
     }
   }
 
+  //creates attribute in cms_attributes
   async createAttribute(
     trx: Knex.Transaction<any, any[]>,
     attribute: Attribute,
@@ -83,28 +84,32 @@ export class AttributeService {
       updated_at: new Date(),
     });
 
+    console.log(attribute, 'gigna');
+
     if (attribute.relationType === 'manyToMany') {
       //TODO
-      // const referencedCollection = await trx('cms_collections').where(
-      //   'name',
-      //   attribute.referencedTable,
-      // );
-      // if (referencedCollection.length > 0) {
-      //   await trx('cms_attributes').insert({
-      //     collection_id: referencedCollection[0].id,
-      //     name: attribute.name,
-      //     display_name: attribute.displayName,
-      //     type: attribute.type,
-      //     relation_type: attribute.relationType,
-      //     referenced_column: attribute.referencedColumn,
-      //     referenced_table: attribute.referencedTable,
-      //     created_at: new Date(),
-      //     updated_at: new Date(),
-      //   });
-      // }
+      const referencedCollection = await trx('cms_collections').where(
+        'name',
+        attribute.referencedTable,
+      );
+      console.log(referencedCollection, attribute, 'giga');
+      if (referencedCollection.length > 0) {
+        await trx('cms_attributes').insert({
+          collection_id: referencedCollection[0].id,
+          name: attribute.name,
+          display_name: attribute.displayName,
+          type: attribute.type,
+          relation_type: attribute.relationType,
+          referenced_column: attribute.referencedColumn,
+          referenced_table: attribute.referencedTable,
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+      }
     }
   }
 
+  //creates column in table
   async addColumnToTable(
     table: Knex.AlterTableBuilder,
     attribute: Attribute,
@@ -151,27 +156,6 @@ export class AttributeService {
               .inTable(collection);
           });
         } else if (attribute.relationType === 'manyToMany') {
-          // const referencedCollection = await trx('cms_collections').where(
-          //   'name',
-          //   attribute.referencedTable,
-          // );
-          // const thisCollection = await trx('cms_collections').where(
-          //   'name',
-          //   collection,
-          // );
-
-          // console.log('yooo', referencedCollection, thisCollection);
-
-          // if (
-          //   referencedCollection.length === 0 ||
-          //   thisCollection.length === 0
-          // ) {
-          //   return new HttpException(
-          //     "Referenced collection doesn't exist.",
-          //     HttpStatus.BAD_REQUEST,
-          //   );
-          // }
-
           // table
           //   .integer(`${attribute.referencedTable}_id`)
           //   .defaultTo(referencedCollection[0].id);
@@ -191,22 +175,20 @@ export class AttributeService {
             `${collection}_${attribute.referencedTable}`,
             (table) => {
               console.log(table);
-              table.integer(`${collection}_id`);
+              table.integer(`${collection}_id`).notNullable();
               table
                 .foreign(`${collection}_id`)
                 .references('id')
-                .inTable(collection);
-              console.log('MERAB');
-              table.integer(`${attribute.referencedTable}_id`);
-              console.log('MERAB2');
+                .inTable(collection)
+                .onDelete('CASCADE');
+              table.integer(`${attribute.referencedTable}_id`).notNullable();
               table
                 .foreign(`${attribute.referencedTable}_id`)
                 .references('id')
-                .inTable(attribute.referencedTable);
+                .inTable(attribute.referencedTable)
+                .onDelete('CASCADE');
             },
           );
-
-          console.log('yooo', 'mebab');
         }
       } else if (attribute.type === 'image') {
         if (attribute.isRequired) {
@@ -285,7 +267,27 @@ export class AttributeService {
               table.dropColumn(`${collection}_${referencedColumn}`);
             });
           } else if (relationType === 'manyToMany') {
+            console.log(`${collection}_${referencedTable}`, 'the table');
+            await trx.schema.alterTable(
+              `${collection}_${referencedTable}`,
+              (table) => {
+                table.dropForeign(`${collection}_id`);
+                table.dropForeign(`${referencedTable}_id`);
+              },
+            );
             await trx.schema.dropTable(`${collection}_${referencedTable}`);
+
+            const referencedCollection = await trx('cms_collections').where(
+              'name',
+              attribute[0].referenced_table,
+            );
+
+            console.log(referencedCollection[0], 'referencedCollection');
+
+            await trx('cms_attributes')
+              .where('collection_id', referencedCollection[0].id)
+              .andWhere('name', collection)
+              .del();
           }
         } else {
           await trx('cms_attributes').where('id', attribute[0].id).del();

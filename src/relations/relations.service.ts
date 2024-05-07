@@ -73,7 +73,29 @@ export class RelationsService {
       }
       // delete keys;
     } else if (relationType === 'manyToMany') {
-      //TODO
+      let associationTable: string = '';
+
+      if (trx.schema.hasTable(`${collection}_${referencedTable}`)) {
+        associationTable = `${collection}_${referencedTable}`;
+      } else if (trx.schema.hasTable(`${referencedTable}_${collection}`)) {
+        associationTable = `${referencedTable}_${collection}`;
+      } else {
+        throw new Error('Association table not found');
+      }
+
+      if (Array.isArray(keys)) {
+        for (const foreginKey of keys) {
+          await trx(associationTable).insert({
+            [`${collection}_id`]: itemId,
+            [`${referencedTable}_id`]: foreginKey,
+          });
+        }
+      } else {
+        await trx(associationTable).insert({
+          [`${collection}_id`]: itemId,
+          [`${referencedTable}_id`]: keys,
+        });
+      }
     }
   }
 }

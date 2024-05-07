@@ -50,6 +50,7 @@ export class ItemsService {
         for (const collectionAttribute of collectionAttributes.filter(
           (x) => x.type !== 'relation',
         )) {
+          console.log(collectionAttribute, collectionAttribute.name, 'opa');
           for (const attribute in attributes) {
             if (collectionAttribute.name === attribute) {
               attributesWithoutRelations[collectionAttribute.name] =
@@ -93,16 +94,25 @@ export class ItemsService {
         for (const collectionRelation of collectionAttributes.filter(
           (x) => x.type === 'relation',
         )) {
-          for (const attribute in attributes) {
-            this.relationsService.addRelation(
-              trx,
-              collectionRelation.relationType,
-              collectionRelation.referencedColumn,
-              collectionRelation.referencedTable,
-              collectionRelation.collection.name,
-              insertedItem.id,
-              attributes[attribute],
-            );
+          this.relationsService.addRelation(
+            trx,
+            collectionRelation['relation_type'],
+            collectionRelation['referenced_column'],
+            collectionRelation['referenced_table'],
+            collection,
+            insertedItem.id,
+            attributes[collectionRelation.name],
+          );
+
+          //Delete attributes that have no column in the table
+          //oneToOne is in the current table
+          //oneToMany is in the referenced table
+          //manyToMany is in the association table
+          if (
+            collectionRelation['relation_type'] === 'oneToMany' ||
+            collectionRelation['relation_type'] === 'manyToMany'
+          ) {
+            delete attributes[collectionRelation.name];
           }
         }
 
