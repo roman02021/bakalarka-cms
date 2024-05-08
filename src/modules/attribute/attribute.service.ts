@@ -187,6 +187,11 @@ export class AttributeService {
                 .references('id')
                 .inTable(attribute.referencedTable)
                 .onDelete('CASCADE');
+
+              table.unique([
+                `${attribute.referencedTable}_id`,
+                `${collection}_id`,
+              ]);
             },
           );
         }
@@ -268,13 +273,13 @@ export class AttributeService {
             });
           } else if (relationType === 'manyToMany') {
             console.log(`${collection}_${referencedTable}`, 'the table');
-            await trx.schema.alterTable(
-              `${collection}_${referencedTable}`,
-              (table) => {
-                table.dropForeign(`${collection}_id`);
-                table.dropForeign(`${referencedTable}_id`);
-              },
-            );
+            // await trx.schema.alterTable(
+            //   `${collection}_${referencedTable}`,
+            //   (table) => {
+            //     table.dropForeign(`${collection}_id`);
+            //     table.dropForeign(`${referencedTable}_id`);
+            //   },
+            // );
             await trx.schema.dropTable(`${collection}_${referencedTable}`);
 
             const referencedCollection = await trx('cms_collections').where(

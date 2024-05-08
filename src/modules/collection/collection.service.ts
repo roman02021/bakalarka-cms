@@ -16,6 +16,20 @@ export class CollectionService {
   ) {}
   async createCollection(createCollectionDto: CreateCollectionDto, user: User) {
     try {
+      if (createCollectionDto.name.includes(' ')) {
+        return new HttpException(
+          'Collection name cannot contain spaces.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      if (createCollectionDto.name.startsWith('cms_')) {
+        return new HttpException(
+          'Collection name cannot start with cms_',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const knex = this.em.getKnex();
 
       if (await knex.schema.hasTable(createCollectionDto.name)) {
@@ -33,6 +47,8 @@ export class CollectionService {
           displayName: createCollectionDto.displayName,
           createdBy: user.id,
         });
+
+        this.em.persist(newCollection);
 
         // const collection = await trx('cms_collections').insert<Collection>(
         //   newCollection,
@@ -63,7 +79,6 @@ export class CollectionService {
           this.em.persist(newAttribute);
           console.log(attribute.relationType);
           if (attribute.relationType === 'manyToMany') {
-            console.log('relation');
             // const referencedCollection = await this.em.findOneOrFail(
             //   Collection,
             //   { name: attribute.referencedTable },
@@ -74,16 +89,17 @@ export class CollectionService {
               'name',
               attribute.referencedTable,
             );
-            console.log(referencedCollection, 'AYO');
+
+            //
             const referencedTableRelationAttribute = new Attribute(
-              attribute.displayName,
+              newCollection.displayName,
               newCollection.name,
               attribute.type,
               referencedCollection[0].id,
               attribute.isRequired,
               attribute.relationType,
               attribute.referencedColumn,
-              attribute.name,
+              newCollection.name,
             );
             console.log(newAttribute, 'RERFERENCED ATTr');
             this.em.persist(referencedTableRelationAttribute);
@@ -111,11 +127,14 @@ export class CollectionService {
           // console.log('CREATING', table);
           table.increments('id').primary();
           table.integer('created_by').unsigned().references('cms_users.id');
+          table.integer('updated_by').unsigned().references('cms_users.id');
+          table.timestamp('created_at').defaultTo(knex.fn.now()).notNullable;
+          table.timestamp('updated_at').defaultTo(knex.fn.now()).notNullable;
+          table.increments('item_order', { primaryKey: false });
           table
             .integer('collection_id')
             .unsigned()
             .references('cms_collections');
-          table.timestamps(true, true);
 
           createCollectionDto.attributes.map((attribute) => {
             this.attributeService.addColumnToTable(
@@ -126,18 +145,19 @@ export class CollectionService {
             );
           });
         });
-        await trx.schema.alterTable(createCollectionDto.name, (table) => {
-          for (const attribute of createCollectionDto.attributes) {
-            this.attributeService.addColumnToTable(
-              table,
-              attribute,
-              trx,
-              createCollectionDto.name,
-            );
-          }
-        });
 
-        this.em.persist(newCollection);
+        // await trx.schema.alterTable(createCollectionDto.name, (table) => {
+        //   for (const attribute of createCollectionDto.attributes) {
+        //     this.attributeService.addColumnToTable(
+        //       table,
+        //       attribute,
+        //       trx,
+        //       createCollectionDto.name,
+        //     );
+        //   }
+        // });
+
+        this.em.flush();
 
         //Nemapovali sa ti polia entity na tabulku v db
         //Napr. collectionName sa nemapovalo na collection_name v db

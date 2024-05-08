@@ -12,6 +12,8 @@ import { Collection } from '../collection/entities/collection.entity';
 import { RelationsService } from '../../relations/relations.service';
 import { File } from '../file/entities/file.entity';
 import { Attribute } from '../attribute/entities/attribute.entity';
+import ApiQueryParameters from 'src/types/queryParameters';
+import { query } from 'express';
 
 @Injectable()
 export class ItemsService {
@@ -81,10 +83,22 @@ export class ItemsService {
           }
         }
 
+        console.log(
+          attributesWithoutRelations,
+          collectionMeta[0],
+          'BEFORE INSERT',
+        );
+
+        const itemOrder = await trx(collection).max('item_order').first();
+
+        console.log(itemOrder, itemOrder.max);
+
         const insertedItem: { id: number } = (
           await trx(collection)
             .insert({
               created_by: user.id,
+              updated_at: new Date(),
+              item_order: itemOrder.max < 10 ? 10 : itemOrder.max + 10,
               collection_id: collectionMeta[0].id,
               ...attributesWithoutRelations,
             })
@@ -94,15 +108,17 @@ export class ItemsService {
         for (const collectionRelation of collectionAttributes.filter(
           (x) => x.type === 'relation',
         )) {
-          this.relationsService.addRelation(
-            trx,
-            collectionRelation['relation_type'],
-            collectionRelation['referenced_column'],
-            collectionRelation['referenced_table'],
-            collection,
-            insertedItem.id,
-            attributes[collectionRelation.name],
-          );
+          if (attributes[collectionRelation.name]) {
+            await this.relationsService.addRelation(
+              trx,
+              collectionRelation['relation_type'],
+              collectionRelation['referenced_column'],
+              collectionRelation['referenced_table'],
+              collection,
+              insertedItem.id,
+              attributes[collectionRelation.name],
+            );
+          }
 
           //Delete attributes that have no column in the table
           //oneToOne is in the current table
@@ -197,7 +213,44 @@ export class ItemsService {
 
                   delete attributes[attribute];
                 } else if (collectionAttribute.relation_type === 'manyToMany') {
-                  //TODO
+                  if (attributes[attribute]) {
+                    const associationTable =
+                      await this.relationsService.getAssociationTable(
+                        trx,
+                        collection,
+                        collectionAttribute.referenced_table,
+                      );
+                    await trx(associationTable)
+                      .where(`${collection}_id`, id)
+                      .del();
+                    if (Array.isArray(attributes[attribute])) {
+                      for (const relation of attributes[attribute]) {
+                        console.log(
+                          relation,
+                          collectionAttribute,
+                          collection,
+                          id,
+                        );
+
+                        await trx(associationTable)
+                          .where(`${collection}_id`, id)
+                          .insert({
+                            [`${collection}_id`]: id,
+                            [`${collectionAttribute.referenced_table}_id`]:
+                              relation,
+                          });
+                      }
+                    } else {
+                      await trx(associationTable)
+                        .where(`${collection}_id`, id)
+                        .insert({
+                          [`${collection}_id`]: id,
+                          [`${collectionAttribute.referenced_table}_id`]:
+                            attributes[attribute],
+                        });
+                    }
+                    delete attributes[attribute];
+                  }
                 }
               } else if (collectionAttribute.type === 'file') {
                 if (
@@ -266,7 +319,7 @@ export class ItemsService {
       );
     }
   }
-  async getItems(collection: string, relationsToPopulate: string[]) {
+  async getItems(collection: string, queryParameters: ApiQueryParameters) {
     try {
       const collectionMeta = await this.em.findOneOrFail(
         Collection,
@@ -306,7 +359,7 @@ export class ItemsService {
             }
 
             await Promise.all(
-              relationsToPopulate.map(async (relation) => {
+              queryParameters.populate.map(async (relation) => {
                 console.log(relation, 'opa', collectionMeta.name);
                 const relationAttribute = await trx('cms_attributes')
                   .where('collection_id', collectionMeta.id)
@@ -334,14 +387,63 @@ export class ItemsService {
                   } else if (
                     relationAttribute[0].relation_type === 'manyToMany'
                   ) {
-                    const foundRelation = await trx(
-                      `${collection}_${relationAttribute[0].referenced_table}`,
-                    )
+                    const associationTable =
+                      await this.relationsService.getAssociationTable(
+                        trx,
+                        collection,
+                        relationAttribute[0].referenced_table,
+                      );
+
+                    const foundRelation = await trx(associationTable)
                       .select('*')
                       .where(`${collectionMeta.name}_id`, item.id);
 
+                    console.log(foundRelation, 'AYO');
+
+                    const allRelations = [];
+
                     if (foundRelation.length > 0) {
-                      item[relation] = foundRelation;
+                      // console.log(foundRelation);
+                      // if (Array.isArray(foundRelation)) {
+                      //   foundRelation.forEach((relation) => {
+
+                      //   });
+                      // }
+                      if (Array.isArray(foundRelation[0])) {
+                        for (const relation of foundRelation[0]) {
+                          const item = await trx(
+                            relationAttribute[0].referenced_table,
+                          ).where(
+                            'id',
+                            relation[
+                              `${relationAttribute[0].referenced_table}_id`
+                            ],
+                          );
+
+                          allRelations.push(item[0]);
+                        }
+
+                        allRelations.push(item[0]);
+                      } else {
+                        for (const relation of foundRelation) {
+                          const item = await trx(
+                            relationAttribute[0].referenced_table,
+                          ).where(
+                            'id',
+                            relation[
+                              `${relationAttribute[0].referenced_table}_id`
+                            ],
+                          );
+
+                          allRelations.push(item[0]);
+                        }
+                      }
+                    }
+
+                    console.log(foundRelation, 'AYO', allRelations);
+
+                    if (foundRelation.length > 0) {
+                      item[relation] = allRelations;
                     }
                   }
                 }

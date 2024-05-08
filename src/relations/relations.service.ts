@@ -45,6 +45,22 @@ export class RelationsService {
         });
     }
   }
+  async getAssociationTable(
+    trx: Knex.Transaction<any, any[]>,
+    collection: string,
+    referencedTable: string,
+  ): Promise<string> {
+    let associationTable: string = '';
+
+    if (await trx.schema.hasTable(`${collection}_${referencedTable}`)) {
+      associationTable = `${collection}_${referencedTable}`;
+    } else if (await trx.schema.hasTable(`${referencedTable}_${collection}`)) {
+      associationTable = `${referencedTable}_${collection}`;
+    } else {
+      throw new Error('Association table not found');
+    }
+    return associationTable;
+  }
   async addRelation(
     trx: Knex.Transaction<any, any[]>,
     relationType: string,
@@ -73,17 +89,14 @@ export class RelationsService {
       }
       // delete keys;
     } else if (relationType === 'manyToMany') {
-      let associationTable: string = '';
-
-      if (trx.schema.hasTable(`${collection}_${referencedTable}`)) {
-        associationTable = `${collection}_${referencedTable}`;
-      } else if (trx.schema.hasTable(`${referencedTable}_${collection}`)) {
-        associationTable = `${referencedTable}_${collection}`;
-      } else {
-        throw new Error('Association table not found');
-      }
+      const associationTable = await this.getAssociationTable(
+        trx,
+        collection,
+        referencedTable,
+      );
 
       if (Array.isArray(keys)) {
+        console.log('ENTERING FOR LOOP', keys);
         for (const foreginKey of keys) {
           await trx(associationTable).insert({
             [`${collection}_id`]: itemId,
