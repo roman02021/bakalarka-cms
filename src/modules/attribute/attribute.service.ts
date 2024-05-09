@@ -37,7 +37,7 @@ export class AttributeService {
         for (const attribute of createAttributesDto.attributes) {
           await this.createAttribute(trx, attribute, fetchedCollection[0].id);
         }
-
+        console.log('AYO');
         //create columns in table or referenced table
         await trx.schema.table(collection, async (table) => {
           for (const attribute of createAttributesDto.attributes) {
@@ -117,6 +117,7 @@ export class AttributeService {
     collection: string,
   ) {
     try {
+      console.log(attribute, 'attribute YOA AB');
       if (attribute.type === 'text') {
         if (attribute.isRequired) {
           table.string(attribute.name).notNullable();
@@ -137,11 +138,30 @@ export class AttributeService {
         }
       } else if (attribute.type === 'relation') {
         if (attribute.relationType === 'oneToOne') {
-          table.integer(`${attribute.referencedTable}_id`);
           table
-            .foreign(`${attribute.referencedTable}_id`)
+            .integer(`${attribute.name}_id`)
+            .defaultTo(null)
+            .nullable()
+            .unique();
+
+          table
+            .foreign(`${attribute.name}_id`)
             .references(attribute.referencedColumn)
             .inTable(attribute.referencedTable);
+
+          await trx.schema.alterTable(attribute.referencedTable, (table) => {
+            table
+              .integer(`${collection}_id`)
+              .unsigned()
+              .nullable()
+              .defaultTo(null)
+              .unique();
+
+            table
+              .foreign(`${collection}_id`)
+              .references('id')
+              .inTable(collection);
+          });
         } else if (attribute.relationType === 'oneToMany') {
           await trx.schema.alterTable(attribute.referencedTable, (table) => {
             table
@@ -250,23 +270,34 @@ export class AttributeService {
         );
         const attribute = await trx('cms_attributes')
           .where('collection_id', collectionScheme[0].id)
-          .andWhere('name', columnName);
+          .andWhere('name', columnName)
+          .first();
 
-        if (attribute[0].type === 'relation') {
-          const relationType = attribute[0].relation_type;
-          const referencedColumn = attribute[0].referenced_column;
-          const referencedTable = attribute[0].referenced_table;
+        if (attribute.type === 'relation') {
+          const relationType = attribute.relation_type;
+          const referencedColumn = attribute.referenced_column;
+          const referencedTable = attribute.referenced_table;
           if (relationType === 'oneToOne') {
             //delete attribute from attributes table
-            await trx('cms_attributes').where('id', attribute[0].id).del();
+            await trx('cms_attributes').where('id', attribute.id).del();
 
             //remove relation column from collection table
+
+            console.log(
+              collection,
+              `${attribute.name}_${referencedColumn}`,
+              'GIGA',
+            );
+
             await trx.schema.alterTable(collection, (table) => {
-              table.dropColumn(`${collection}_${referencedColumn}`);
+              table.dropColumn(`${attribute.name}_${referencedColumn}`);
+            });
+            await trx.schema.alterTable(referencedTable, (table) => {
+              table.dropColumn(`${collection}_id`);
             });
           } else if (relationType === 'oneToMany') {
             //delete attribute from attributes table
-            await trx('cms_attributes').where('id', attribute[0].id).del();
+            await trx('cms_attributes').where('id', attribute.id).del();
             //remove relation column from collection table
             await trx.schema.alterTable(referencedTable, (table) => {
               table.dropColumn(`${collection}_${referencedColumn}`);
@@ -284,7 +315,7 @@ export class AttributeService {
 
             const referencedCollection = await trx('cms_collections').where(
               'name',
-              attribute[0].referenced_table,
+              attribute.referenced_table,
             );
 
             console.log(referencedCollection[0], 'referencedCollection');

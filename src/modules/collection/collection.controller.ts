@@ -42,16 +42,4 @@ export class CollectionController {
     const user: User = req.user;
     return this.collectionService.createCollection(createCollectionDto, user);
   }
-
-  @Post('/v2')
-  createCollectionTest(
-    @Body(ValidationPipe) createCollectionDto: CreateCollectionDto,
-    @Request() req,
-  ) {
-    const user: User = req.user;
-    return this.collectionService.createCollectionTest(
-      createCollectionDto,
-      user,
-    );
-  }
 }

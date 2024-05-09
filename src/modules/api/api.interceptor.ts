@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable } from '@nestjs/common';
 import { map } from 'rxjs/operators';
 import { camelCase } from 'lodash';
+import ApiResponse from 'src/types/apiResponse';
+import { Observable } from 'rxjs';
 @Injectable()
 export class ApiInterceptor {
-  intercept(context, next) {
-    function transformToCamelCase(object: Record<string, unknown>) {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    // console.log(context, 'context');
+    function transformToCamelCase(object: Record<string, any>) {
+      console.log(object, 'object');
       const transformedObject = Object.fromEntries(
         Object.entries(object).map(([k, v]) => {
           if (Array.isArray(v)) {
@@ -20,10 +24,15 @@ export class ApiInterceptor {
     }
 
     return next.handle().pipe(
-      map((data: Record<string, unknown>[]) => {
+      map((data: ApiResponse) => {
         console.log(data, 'yoo');
-        const transformedData = data.map((data) => transformToCamelCase(data));
-        return transformedData;
+        const transformedItems = data.items?.map((data) =>
+          transformToCamelCase(data),
+        );
+        return {
+          ...data,
+          items: transformedItems,
+        };
       }),
     );
   }

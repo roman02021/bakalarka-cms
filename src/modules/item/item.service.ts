@@ -14,6 +14,8 @@ import { File } from '../file/entities/file.entity';
 import { Attribute } from '../attribute/entities/attribute.entity';
 import ApiQueryParameters from 'src/types/queryParameters';
 import { query } from 'express';
+import { size } from 'lodash';
+import ApiResponse from 'src/types/apiResponse';
 
 @Injectable()
 export class ItemsService {
@@ -129,8 +131,14 @@ export class ItemsService {
             collectionRelation['relation_type'] === 'manyToMany'
           ) {
             delete attributes[collectionRelation.name];
+          } else {
+            attributes[`${collectionRelation.name}_id`] =
+              attributes[collectionRelation.name];
+            delete attributes[collectionRelation.name];
           }
         }
+
+        console.log(attributes, 'AFTER INSERT', insertedItem.id, 'ID');
 
         await trx(collection)
           .where('id', insertedItem.id)
@@ -188,6 +196,8 @@ export class ItemsService {
             if (collectionAttribute.name === attribute) {
               if (collectionAttribute.type === 'relation') {
                 if (collectionAttribute.relation_type === 'oneToOne') {
+                  attributes[`${attribute}_id`] = attributes[attribute];
+                  delete attributes[attribute];
                 } else if (collectionAttribute.relation_type === 'oneToMany') {
                   if (attributes[attribute]) {
                     if (Array.isArray(attributes[attribute])) {
@@ -319,7 +329,10 @@ export class ItemsService {
       );
     }
   }
-  async getItems(collection: string, queryParameters: ApiQueryParameters) {
+  async getItems(
+    collection: string,
+    queryParameters: ApiQueryParameters,
+  ): Promise<ApiResponse> {
     try {
       const collectionMeta = await this.em.findOneOrFail(
         Collection,
@@ -332,7 +345,24 @@ export class ItemsService {
       );
 
       const knex = this.em.getKnex();
-      const items = await knex.from(collection).select('*');
+      const total = await knex(collection).count('id').first();
+      const items = await knex
+        .from(collection)
+        .select('*')
+        .orderBy(queryParameters.sortBy, queryParameters.sortOrder)
+        .limit(queryParameters.limit)
+        .offset(queryParameters.offset * queryParameters.limit);
+
+      // console.log(
+      //   collection,
+      //   queryParameters.sortBy,
+      //   queryParameters.sortOrder,
+      //   queryParameters.limit,
+      //   items,
+      //   'items',
+      //   total,
+      //   'total',
+      // );
 
       await knex.transaction(async (trx) => {
         const collectionAttributes = await trx('cms_attributes').where(
@@ -358,6 +388,8 @@ export class ItemsService {
               }
             }
 
+            console.log(item);
+
             await Promise.all(
               queryParameters.populate.map(async (relation) => {
                 console.log(relation, 'opa', collectionMeta.name);
@@ -369,7 +401,32 @@ export class ItemsService {
                 // this.em.map(Attribute, relationAttribute);
 
                 if (relationAttribute.length > 0) {
-                  console.log(relationAttribute[0].referenced_table, 'ayo');
+                  if (relationAttribute[0].relation_type === 'oneToOne') {
+                    console.log(
+                      relationAttribute[0],
+                      'referenced_table',
+                      item,
+                      item['article_header_id'],
+                      '<--- ITEM',
+                      item[`${relationAttribute[0].name}_id`],
+                      `${relationAttribute[0].name}_id`,
+                    );
+                    const relationId = item[`${relationAttribute[0].name}_id`];
+                    console.log(relationId);
+                    if (relationId !== null) {
+                      console.log('yo', relationId, relationAttribute[0].name);
+                      const foundRelation = await trx(relationAttribute[0].name)
+                        .select('*')
+                        .where('id', relationId);
+
+                      console.log(foundRelation, 'foundRelation');
+
+                      if (foundRelation.length > 0) {
+                        item[relation] = foundRelation[0];
+                      }
+                    }
+                    console.log('yoOOOO');
+                  }
                   if (relationAttribute[0].relation_type === 'oneToMany') {
                     const foundRelation = await trx(
                       relationAttribute[0].referenced_table,
@@ -457,12 +514,15 @@ export class ItemsService {
 
       console.log(items);
 
-      return items;
+      return {
+        total: Number(total.count),
+        items,
+      };
     } catch (error) {
       if (error.response) {
         return error.response;
       } else {
-        return new HttpException(error, HttpStatus.BAD_REQUEST);
+        new HttpException(error, HttpStatus.BAD_REQUEST);
       }
     }
   }

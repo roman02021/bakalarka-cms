@@ -1,6 +1,6 @@
 export default interface ApiQueryParameters {
   populate: string[];
-  startFrom: number;
+  offset: number;
   limit: number;
   sortBy: string;
   sortOrder: 'asc' | 'desc';

@@ -9,6 +9,7 @@ import {
 import { ItemsService } from '../item/item.service';
 import { ApiInterceptor } from './api.interceptor';
 import { User } from '../user/entities/user.entity';
+import ApiQueryParameters from 'src/types/queryParameters';
 
 @Controller('api')
 export class ApiController {
@@ -18,20 +19,20 @@ export class ApiController {
   getItems(
     @Param('collection') collection: string,
     @Query('populate') relationsToPopulate: string[] = [],
-    @Query('startFrom') startFrom: number = 0,
+    @Query('offset') offset: number = 0,
     @Query('limit') limit: number = 15,
-    @Query('sortBy') sortBy: string = '',
+    @Query('sortBy') sortBy: string = 'item_order',
     @Query('sortOrder') sortOrder: 'asc' | 'desc' = 'desc',
   ) {
-    const queryParameters: QueryParameters = {
+    const queryParameters: ApiQueryParameters = {
       populate: relationsToPopulate,
-      startFrom,
+      offset,
       limit,
       sortBy,
       sortOrder,
     };
 
-    return this.itemsService.getItems(collection, parameters);
+    return this.itemsService.getItems(collection, queryParameters);
   }
   @Get('/:collection/:id')
   getItem(

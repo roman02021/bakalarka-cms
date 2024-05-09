@@ -78,24 +78,34 @@ export class CollectionService {
           );
           this.em.persist(newAttribute);
           console.log(attribute.relationType);
-          if (attribute.relationType === 'manyToMany') {
+          if (
+            attribute.relationType === 'manyToMany' ||
+            attribute.relationType === 'oneToOne'
+          ) {
             // const referencedCollection = await this.em.findOneOrFail(
             //   Collection,
             //   { name: attribute.referencedTable },
             // );
 
             //you need to use knex here because mikroorm flushes when finding a managed entitiy
-            const referencedCollection = await trx('cms_collections').where(
-              'name',
-              attribute.referencedTable,
-            );
+            const referencedCollection = await trx('cms_collections')
+              .where('name', attribute.referencedTable)
+              .first();
+
+            console.log(referencedCollection);
+
+            if (!referencedCollection) {
+              throw new Error('Referenced collection not found.');
+            }
+
+            console.log('after throw ');
 
             //
             const referencedTableRelationAttribute = new Attribute(
               newCollection.displayName,
               newCollection.name,
               attribute.type,
-              referencedCollection[0].id,
+              referencedCollection.id,
               attribute.isRequired,
               attribute.relationType,
               attribute.referencedColumn,
@@ -211,6 +221,8 @@ export class CollectionService {
           collection[0].id,
         );
 
+        console.log('aYOOO', collectionAttributes);
+
         for (const attribute of collectionAttributes) {
           if (attribute.type === 'relation') {
             await this.attributeService.deleteColumn(
@@ -219,8 +231,6 @@ export class CollectionService {
             );
           }
         }
-
-        console.log('DELETING', collectionName);
 
         await trx('cms_collections').where('name', collectionName).del();
 
@@ -237,15 +247,5 @@ export class CollectionService {
         },
       );
     }
-  }
-  async createCollectionTest(
-    createCollectionDto: CreateCollectionDto,
-    user: User,
-  ) {
-    this.orm.entityGenerator.generate({
-      save: true,
-      path: process.cwd() + '/my-entities',
-    });
-    return 'test';
   }
 }
