@@ -6,6 +6,7 @@ import { Collection } from './entities/collection.entity';
 import { AttributeService } from '../attribute/attribute.service';
 import { MikroORM } from '@mikro-orm/core';
 import { Attribute } from '../attribute/entities/attribute.entity';
+import { UpdateCollectionDto } from './dto/update-collection.dto';
 
 @Injectable()
 export class CollectionService {
@@ -14,6 +15,28 @@ export class CollectionService {
     private readonly attributeService: AttributeService,
     private readonly orm: MikroORM,
   ) {}
+
+  async updateCollection(
+    collectionId: string,
+    updateCollectionDto: UpdateCollectionDto,
+  ) {
+    try {
+      const collection = await this.em.findOneOrFail(Collection, {
+        name: collectionId,
+      });
+
+      collection.displayName = updateCollectionDto.displayName;
+
+      this.em.persistAndFlush(collection);
+
+      return {
+        message: `Updated collection : ${collectionId}`,
+      };
+    } catch (error) {
+      return new HttpException(error, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async createCollection(createCollectionDto: CreateCollectionDto, user: User) {
     try {
       if (createCollectionDto.name.includes(' ')) {
@@ -50,20 +73,6 @@ export class CollectionService {
 
         this.em.persist(newCollection);
 
-        // const collection = await trx('cms_collections').insert<Collection>(
-        //   newCollection,
-        // );
-
-        // const collection = await trx(this.em.getMetadata(Collection).tableName)
-        //   .insert({
-        //     name: createCollectionDto.name,
-        //     created_by: user.id,
-        //     created_at: new Date(),
-        //     updated_at: new Date(),
-        //     display_name: createCollectionDto.displayName,
-        //   })
-        //   .returning('*');
-
         //create attributes in cms_attributes
         for (const attribute of createCollectionDto.attributes) {
           const newAttribute = new Attribute(
@@ -77,30 +86,19 @@ export class CollectionService {
             attribute.referencedTable,
           );
           this.em.persist(newAttribute);
-          console.log(attribute.relationType);
           if (
             attribute.relationType === 'manyToMany' ||
             attribute.relationType === 'oneToOne'
           ) {
-            // const referencedCollection = await this.em.findOneOrFail(
-            //   Collection,
-            //   { name: attribute.referencedTable },
-            // );
-
             //you need to use knex here because mikroorm flushes when finding a managed entitiy
             const referencedCollection = await trx('cms_collections')
               .where('name', attribute.referencedTable)
               .first();
 
-            console.log(referencedCollection);
-
             if (!referencedCollection) {
               throw new Error('Referenced collection not found.');
             }
 
-            console.log('after throw ');
-
-            //
             const referencedTableRelationAttribute = new Attribute(
               newCollection.displayName,
               newCollection.name,
@@ -111,30 +109,12 @@ export class CollectionService {
               attribute.referencedColumn,
               newCollection.name,
             );
-            console.log(newAttribute, 'RERFERENCED ATTr');
             this.em.persist(referencedTableRelationAttribute);
           }
-          // await trx('cms_attributes').insert<Attribute>(newAttribute);
         }
-        // await Promise.all(
-        //   createCollectionDto.attributes.map(async (attribute) => {
-        //     const newAttribute = new Attribute(
-        //       attribute.displayName,
-        //       attribute.name,
-        //       attribute.type,
-        //       collection[0].id,
-        //       attribute.isRequired,
-        //       attribute.relationType,
-        //       attribute.referencedColumn,
-        //       attribute.referencedTable,
-        //     );
-        //     await trx('cms_attributes').insert<Attribute>(newAttribute);
-        //   }),
-        // );
 
         //create a new table with provided columns (attributes/relations)
         await trx.schema.createTable(createCollectionDto.name, (table) => {
-          // console.log('CREATING', table);
           table.increments('id').primary();
           table.integer('created_by').unsigned().references('cms_users.id');
           table.integer('updated_by').unsigned().references('cms_users.id');
@@ -156,28 +136,13 @@ export class CollectionService {
           });
         });
 
-        // await trx.schema.alterTable(createCollectionDto.name, (table) => {
-        //   for (const attribute of createCollectionDto.attributes) {
-        //     this.attributeService.addColumnToTable(
-        //       table,
-        //       attribute,
-        //       trx,
-        //       createCollectionDto.name,
-        //     );
-        //   }
-        // });
-
         this.em.flush();
-
-        //Nemapovali sa ti polia entity na tabulku v db
-        //Napr. collectionName sa nemapovalo na collection_name v db
       });
 
       return {
         message: `Created collection : ${createCollectionDto.name}`,
       };
     } catch (error) {
-      console.log(error);
       return new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
@@ -220,8 +185,6 @@ export class CollectionService {
           'collection_id',
           collection[0].id,
         );
-
-        console.log('aYOOO', collectionAttributes);
 
         for (const attribute of collectionAttributes) {
           if (attribute.type === 'relation') {

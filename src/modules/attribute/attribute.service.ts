@@ -12,8 +12,6 @@ export class AttributeService {
   ) {
     const knex = this.em.getKnex();
 
-    console.log(collection, await knex.schema.hasTable(collection));
-
     if (!(await knex.schema.hasTable(collection))) {
       return new HttpException(
         "Collection doesn't exist.",
@@ -37,7 +35,6 @@ export class AttributeService {
         for (const attribute of createAttributesDto.attributes) {
           await this.createAttribute(trx, attribute, fetchedCollection[0].id);
         }
-        console.log('AYO');
         //create columns in table or referenced table
         await trx.schema.table(collection, async (table) => {
           for (const attribute of createAttributesDto.attributes) {
@@ -84,15 +81,11 @@ export class AttributeService {
       updated_at: new Date(),
     });
 
-    console.log(attribute, 'gigna');
-
     if (attribute.relationType === 'manyToMany') {
-      //TODO
       const referencedCollection = await trx('cms_collections').where(
         'name',
         attribute.referencedTable,
       );
-      console.log(referencedCollection, attribute, 'giga');
       if (referencedCollection.length > 0) {
         await trx('cms_attributes').insert({
           collection_id: referencedCollection[0].id,
@@ -117,7 +110,6 @@ export class AttributeService {
     collection: string,
   ) {
     try {
-      console.log(attribute, 'attribute YOA AB');
       if (attribute.type === 'text') {
         if (attribute.isRequired) {
           table.string(attribute.name).notNullable();
@@ -176,25 +168,9 @@ export class AttributeService {
               .inTable(collection);
           });
         } else if (attribute.relationType === 'manyToMany') {
-          // table
-          //   .integer(`${attribute.referencedTable}_id`)
-          //   .defaultTo(referencedCollection[0].id);
-          // table
-          //   .foreign(`${attribute.referencedTable}_id`)
-          //   .references('id')
-          //   .inTable('cms_collections');
-          // await trx.schema.alterTable(attribute.referencedTable, (table) => {
-          //   table.integer(`${collection}_id`).defaultTo(thisCollection[0].id);
-          //   table
-          //     .foreign(`${collection}_id`)
-          //     .references('id')
-          //     .inTable('cms_collections');
-          // });
-
           await trx.schema.createTable(
             `${collection}_${attribute.referencedTable}`,
             (table) => {
-              console.log(table);
               table.integer(`${collection}_id`).notNullable();
               table
                 .foreign(`${collection}_id`)
@@ -248,12 +224,8 @@ export class AttributeService {
     }
   }
 
-  // async getAttributes(collectionId) {}
-
   async deleteColumn(collection: string, columnName: string) {
     const knex = this.em.getKnex();
-
-    console.log(collection);
 
     if (!(await knex.schema.hasTable(collection))) {
       return new HttpException(
@@ -282,13 +254,6 @@ export class AttributeService {
             await trx('cms_attributes').where('id', attribute.id).del();
 
             //remove relation column from collection table
-
-            console.log(
-              collection,
-              `${attribute.name}_${referencedColumn}`,
-              'GIGA',
-            );
-
             await trx.schema.alterTable(collection, (table) => {
               table.dropColumn(`${attribute.name}_${referencedColumn}`);
             });
@@ -303,22 +268,12 @@ export class AttributeService {
               table.dropColumn(`${collection}_${referencedColumn}`);
             });
           } else if (relationType === 'manyToMany') {
-            console.log(`${collection}_${referencedTable}`, 'the table');
-            // await trx.schema.alterTable(
-            //   `${collection}_${referencedTable}`,
-            //   (table) => {
-            //     table.dropForeign(`${collection}_id`);
-            //     table.dropForeign(`${referencedTable}_id`);
-            //   },
-            // );
             await trx.schema.dropTable(`${collection}_${referencedTable}`);
 
             const referencedCollection = await trx('cms_collections').where(
               'name',
               attribute.referenced_table,
             );
-
-            console.log(referencedCollection[0], 'referencedCollection');
 
             await trx('cms_attributes')
               .where('collection_id', referencedCollection[0].id)

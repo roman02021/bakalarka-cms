@@ -31,11 +31,6 @@ import { EntityGenerator } from '@mikro-orm/entity-generator';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         if (configService.get('NODE_ENV') === 'test') {
-          console.log(
-            configService.get('DB_NAME_TEST'),
-            configService.get('NODE_ENV'),
-            configService.get('DB_USER_TEST'),
-          );
           return {
             driver: PostgreSqlDriver,
             dbName: configService.get('DB_NAME_TEST'),

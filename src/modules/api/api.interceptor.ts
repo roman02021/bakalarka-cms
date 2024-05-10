@@ -6,9 +6,7 @@ import { Observable } from 'rxjs';
 @Injectable()
 export class ApiInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    // console.log(context, 'context');
     function transformToCamelCase(object: Record<string, any>) {
-      console.log(object, 'object');
       const transformedObject = Object.fromEntries(
         Object.entries(object).map(([k, v]) => {
           if (Array.isArray(v)) {
@@ -25,7 +23,6 @@ export class ApiInterceptor {
 
     return next.handle().pipe(
       map((data: ApiResponse) => {
-        console.log(data, 'yoo');
         const transformedItems = data.items?.map((data) =>
           transformToCamelCase(data),
         );

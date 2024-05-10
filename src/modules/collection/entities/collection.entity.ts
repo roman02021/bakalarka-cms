@@ -6,16 +6,16 @@ import {
   Unique,
 } from '@mikro-orm/core';
 import { BaseEntity } from '../../shared/base.entity';
-// import { Attribute } from 'src/types/attribute';
 import { Attribute } from '../../attribute/entities/attribute.entity';
+import { IsString } from 'class-validator';
 
 @Entity({ tableName: 'cms_collections' })
 @Unique({ properties: ['name'] })
 export class Collection extends BaseEntity {
-  @Property({ name: 'created_by' })
+  @Property()
   createdBy: number;
 
-  @Property({ name: 'display_name' })
+  @Property()
   displayName: string;
 
   @Property()

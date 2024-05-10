@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
 import { ItemsService } from '../item/item.service';
 import { ApiInterceptor } from './api.interceptor';
-import { User } from '../user/entities/user.entity';
 import ApiQueryParameters from 'src/types/queryParameters';
 
 @Controller('api')

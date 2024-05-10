@@ -54,7 +54,6 @@ export class ItemsService {
         for (const collectionAttribute of collectionAttributes.filter(
           (x) => x.type !== 'relation',
         )) {
-          console.log(collectionAttribute, collectionAttribute.name, 'opa');
           for (const attribute in attributes) {
             if (collectionAttribute.name === attribute) {
               attributesWithoutRelations[collectionAttribute.name] =
@@ -85,15 +84,7 @@ export class ItemsService {
           }
         }
 
-        console.log(
-          attributesWithoutRelations,
-          collectionMeta[0],
-          'BEFORE INSERT',
-        );
-
         const itemOrder = await trx(collection).max('item_order').first();
-
-        console.log(itemOrder, itemOrder.max);
 
         const insertedItem: { id: number } = (
           await trx(collection)
@@ -137,8 +128,6 @@ export class ItemsService {
             delete attributes[collectionRelation.name];
           }
         }
-
-        console.log(attributes, 'AFTER INSERT', insertedItem.id, 'ID');
 
         await trx(collection)
           .where('id', insertedItem.id)
@@ -235,13 +224,6 @@ export class ItemsService {
                       .del();
                     if (Array.isArray(attributes[attribute])) {
                       for (const relation of attributes[attribute]) {
-                        console.log(
-                          relation,
-                          collectionAttribute,
-                          collection,
-                          id,
-                        );
-
                         await trx(associationTable)
                           .where(`${collection}_id`, id)
                           .insert({
@@ -302,7 +284,6 @@ export class ItemsService {
         message: `Item ${item[0].id}`,
       };
     } catch (error) {
-      console.log(error);
       return new HttpException(
         'Something went wrong.',
         HttpStatus.BAD_REQUEST,
@@ -353,17 +334,6 @@ export class ItemsService {
         .limit(queryParameters.limit)
         .offset(queryParameters.offset * queryParameters.limit);
 
-      // console.log(
-      //   collection,
-      //   queryParameters.sortBy,
-      //   queryParameters.sortOrder,
-      //   queryParameters.limit,
-      //   items,
-      //   'items',
-      //   total,
-      //   'total',
-      // );
-
       await knex.transaction(async (trx) => {
         const collectionAttributes = await trx('cms_attributes').where(
           'collection_id',
@@ -374,7 +344,6 @@ export class ItemsService {
           (collectionAttribute) => collectionAttribute.type === 'file',
         );
 
-        //pozri ine riesenie okrem promise.all alebo pozri ci je promise.all dobre
         await Promise.all(
           items.map(async (item) => {
             for (const fileAttribute of fileAttributes) {
@@ -388,44 +357,25 @@ export class ItemsService {
               }
             }
 
-            console.log(item);
-
             await Promise.all(
               queryParameters.populate.map(async (relation) => {
-                console.log(relation, 'opa', collectionMeta.name);
                 const relationAttribute = await trx('cms_attributes')
                   .where('collection_id', collectionMeta.id)
                   .andWhere('name', relation)
                   .andWhere('type', 'relation');
 
-                // this.em.map(Attribute, relationAttribute);
-
                 if (relationAttribute.length > 0) {
                   if (relationAttribute[0].relation_type === 'oneToOne') {
-                    console.log(
-                      relationAttribute[0],
-                      'referenced_table',
-                      item,
-                      item['article_header_id'],
-                      '<--- ITEM',
-                      item[`${relationAttribute[0].name}_id`],
-                      `${relationAttribute[0].name}_id`,
-                    );
                     const relationId = item[`${relationAttribute[0].name}_id`];
-                    console.log(relationId);
                     if (relationId !== null) {
-                      console.log('yo', relationId, relationAttribute[0].name);
                       const foundRelation = await trx(relationAttribute[0].name)
                         .select('*')
                         .where('id', relationId);
-
-                      console.log(foundRelation, 'foundRelation');
 
                       if (foundRelation.length > 0) {
                         item[relation] = foundRelation[0];
                       }
                     }
-                    console.log('yoOOOO');
                   }
                   if (relationAttribute[0].relation_type === 'oneToMany') {
                     const foundRelation = await trx(
@@ -455,17 +405,9 @@ export class ItemsService {
                       .select('*')
                       .where(`${collectionMeta.name}_id`, item.id);
 
-                    console.log(foundRelation, 'AYO');
-
                     const allRelations = [];
 
                     if (foundRelation.length > 0) {
-                      // console.log(foundRelation);
-                      // if (Array.isArray(foundRelation)) {
-                      //   foundRelation.forEach((relation) => {
-
-                      //   });
-                      // }
                       if (Array.isArray(foundRelation[0])) {
                         for (const relation of foundRelation[0]) {
                           const item = await trx(
@@ -497,8 +439,6 @@ export class ItemsService {
                       }
                     }
 
-                    console.log(foundRelation, 'AYO', allRelations);
-
                     if (foundRelation.length > 0) {
                       item[relation] = allRelations;
                     }
@@ -511,8 +451,6 @@ export class ItemsService {
           }),
         );
       });
-
-      console.log(items);
 
       return {
         total: Number(total.count),

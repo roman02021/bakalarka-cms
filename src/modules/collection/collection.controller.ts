@@ -8,11 +8,13 @@ import {
   Request,
   Delete,
   ValidationPipe,
+  Put,
 } from '@nestjs/common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { CollectionService } from './collection.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { User } from 'src/types/user';
+import { UpdateCollectionDto } from './dto/update-collection.dto';
 
 @Controller('collection')
 @UseGuards(AuthGuard)
@@ -27,6 +29,17 @@ export class CollectionController {
   @Get('/:collectionId')
   getAllCollection(@Param('collectionId') collectionId: string) {
     return this.collectionService.getCollectionById(collectionId);
+  }
+
+  @Put('/:collectionId')
+  updateCollection(
+    @Param('collectionId') collectionId: string,
+    @Body() updateCollectionDto: UpdateCollectionDto,
+  ) {
+    return this.collectionService.updateCollection(
+      collectionId,
+      updateCollectionDto,
+    );
   }
 
   @Delete('/:collectionId')

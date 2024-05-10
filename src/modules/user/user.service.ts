@@ -15,7 +15,6 @@ export class UserService {
     try {
       const newUser = this.em.create(User, registerDto);
       const errors = await validate(newUser);
-      console.log(errors, 'errs');
       if (errors.length > 0) {
         throw new HttpException(
           {
