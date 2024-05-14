@@ -31,7 +31,6 @@ import { UserController } from './modules/user/user.controller';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        console.log(configService.get('NODE_ENV'), 'AYOAO');
         if (configService.get('NODE_ENV') === 'test') {
           return {
             driver: PostgreSqlDriver,
@@ -47,7 +46,6 @@ import { UserController } from './modules/user/user.controller';
             tsNode: false,
           };
         } else if (configService.get('NODE_ENV') === 'prod') {
-          console.log('IS IN PROD');
         } else {
         }
         return {
