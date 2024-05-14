@@ -9,6 +9,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       exceptionFactory: (errors) => new BadRequestException(errors),
+      transformOptions: { exposeUnsetFields: false },
     }),
   );
 

@@ -20,6 +20,7 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { ApiModule } from './modules/api/api.module';
 import { RelationsService } from './relations/relations.service';
 import { EntityGenerator } from '@mikro-orm/entity-generator';
+import { UserController } from './modules/user/user.controller';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { EntityGenerator } from '@mikro-orm/entity-generator';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        console.log(configService.get('NODE_ENV'), 'AYOAO');
         if (configService.get('NODE_ENV') === 'test') {
           return {
             driver: PostgreSqlDriver,
@@ -44,6 +46,9 @@ import { EntityGenerator } from '@mikro-orm/entity-generator';
             extensions: [EntityGenerator, SeedManager],
             tsNode: false,
           };
+        } else if (configService.get('NODE_ENV') === 'prod') {
+          console.log('IS IN PROD');
+        } else {
         }
         return {
           driver: PostgreSqlDriver,
@@ -72,7 +77,7 @@ import { EntityGenerator } from '@mikro-orm/entity-generator';
     AttributeModule,
     ApiModule,
   ],
-  controllers: [CollectionController],
+  controllers: [CollectionController, UserController],
   providers: [CollectionService, RelationsService],
 })
 export class AppModule {}

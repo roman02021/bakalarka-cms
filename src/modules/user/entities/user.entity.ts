@@ -1,13 +1,6 @@
-import {
-  BeforeCreate,
-  BeforeUpsert,
-  Entity,
-  OnInit,
-  Property,
-  Unique,
-} from '@mikro-orm/core';
+import { Entity, Property, Unique } from '@mikro-orm/core';
 import { BaseEntity } from '../../shared/base.entity';
-import { IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsEmail } from 'class-validator';
 import * as bcrypt from 'bcrypt';
 
 @Entity({ tableName: 'cms_users' })
