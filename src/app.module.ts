@@ -31,6 +31,12 @@ import { UserController } from './modules/user/user.controller';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        console.log(
+          configService.get('NODE_ENV'),
+          'yo',
+          configService.get('DB_NAME'),
+          configService.get('DB_HOST'),
+        );
         if (configService.get('NODE_ENV') === 'test') {
           return {
             driver: PostgreSqlDriver,
