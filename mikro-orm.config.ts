@@ -1,26 +1,18 @@
 import { Options } from '@mikro-orm/core';
-import { EntityGenerator } from '@mikro-orm/entity-generator';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
-import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 
-const config: Options = {
-  driver: PostgreSqlDriver,
-  dbName: 'test_db',
-  host: 'localhost',
-  port: 5432,
-  user: 'test_user',
-  password: 'test_password',
+const configService = new ConfigService();
+console.log('test', configService, process.env);
+const MikroOrmConfig: Options = {
   entities: ['dist/**/*.entity.js'],
   entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
-  metadataProvider: TsMorphMetadataProvider,
-  debug: true,
-  schemaGenerator: {
-    disableForeignKeys: true,
-    createForeignKeyConstraints: true,
-    ignoreSchema: [],
-  },
-  extensions: [EntityGenerator],
+  driver: PostgreSqlDriver,
+  dbName: configService.get('DB_NAME'),
+  user: configService.get('POSTGRES_USER'),
+  password: configService.get('POSTGRES_PASSWORD'),
+  host: configService.get('POSTGRES_HOST'),
+  port: configService.get('POSTGRES_PORT'),
 };
 
-export default config;
+export default MikroOrmConfig;

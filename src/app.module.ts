@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap, OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CollectionController } from './modules/collection/collection.controller';
 import { CollectionService } from './modules/collection/collection.service';
@@ -15,7 +15,12 @@ import { SeedManager } from '@mikro-orm/seeder';
 
 // import { Options } from '@mikro-orm/core';
 // import { EntityGenerator } from '@mikro-orm/entity-generator';
-import { PostgreSqlDriver } from '@mikro-orm/postgresql';
+import {
+  MikroORM,
+  PostgreSqlDriver,
+  SchemaGenerator,
+} from '@mikro-orm/postgresql';
+import { Migrator } from '@mikro-orm/migrations';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { ApiModule } from './modules/api/api.module';
 import { RelationsService } from './relations/relations.service';
@@ -29,14 +34,7 @@ import { UserController } from './modules/user/user.controller';
     }),
     MikroOrmModule.forRootAsync({
       imports: [ConfigModule],
-      inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        console.log(
-          configService.get('NODE_ENV'),
-          'yo',
-          configService.get('DB_NAME'),
-          configService.get('DB_HOST'),
-        );
         if (configService.get('NODE_ENV') === 'test') {
           return {
             driver: PostgreSqlDriver,
@@ -48,7 +46,7 @@ import { UserController } from './modules/user/user.controller';
             entities: ['dist/**/*.entity.js'],
             entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
             metadataProvider: TsMorphMetadataProvider,
-            extensions: [EntityGenerator, SeedManager],
+            extensions: [EntityGenerator, SeedManager, Migrator],
             tsNode: false,
           };
         } else if (configService.get('NODE_ENV') === 'prod') {
@@ -64,9 +62,10 @@ import { UserController } from './modules/user/user.controller';
           entities: ['dist/**/*.entity.js'],
           entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
           metadataProvider: TsMorphMetadataProvider,
-          extensions: [EntityGenerator],
+          extensions: [EntityGenerator, SchemaGenerator, Migrator],
         };
       },
+      inject: [ConfigService],
     }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../files'),
@@ -81,7 +80,7 @@ import { UserController } from './modules/user/user.controller';
     AttributeModule,
     ApiModule,
   ],
-  controllers: [CollectionController, UserController],
-  providers: [CollectionService, RelationsService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
