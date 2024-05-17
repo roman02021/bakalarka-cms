@@ -32,41 +32,7 @@ import { UserController } from './modules/user/user.controller';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MikroOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => {
-        if (configService.get('NODE_ENV') === 'test') {
-          return {
-            driver: PostgreSqlDriver,
-            dbName: configService.get('DB_NAME_TEST'),
-            host: configService.get('DB_HOST_TEST'),
-            port: configService.get('DB_PORT_TEST'),
-            user: configService.get('DB_USER_TEST'),
-            password: configService.get('DB_PASSWORD_TEST'),
-            entities: ['dist/**/*.entity.js'],
-            entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
-            metadataProvider: TsMorphMetadataProvider,
-            extensions: [EntityGenerator, SeedManager, Migrator],
-            tsNode: false,
-          };
-        } else if (configService.get('NODE_ENV') === 'prod') {
-        } else {
-        }
-        return {
-          driver: PostgreSqlDriver,
-          dbName: configService.get('DB_NAME'),
-          host: configService.get('DB_HOST'),
-          port: configService.get('DB_PORT'),
-          user: configService.get('DB_USER'),
-          password: configService.get('DB_PASSWORD'),
-          entities: ['dist/**/*.entity.js'],
-          entitiesTs: ['src/**/*.entity.ts', 'src/**/**/*.entity.ts'],
-          metadataProvider: TsMorphMetadataProvider,
-          extensions: [EntityGenerator, SchemaGenerator, Migrator],
-        };
-      },
-      inject: [ConfigService],
-    }),
+    MikroOrmModule.forRootAsync(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../files'),
       serveRoot: '/files',

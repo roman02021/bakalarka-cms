@@ -28,14 +28,12 @@ export class FileController {
 
   @Post('upload/:folderId')
   @UseInterceptors(FileInterceptor('file'))
-  // @UsePipes(new ValidationPipe({ transform: true }))
   uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Request() req,
     @Param('folderId') folderId: number,
   ) {
     const user: User = req.user;
-    console.log(file);
     return this.fileService.saveFile(file, user, folderId);
   }
 

@@ -8,7 +8,7 @@ async function bootstrap() {
     cors: true,
   });
 
-  console.log('yo ');
+  console.log('yo');
 
   // await app.get(MikroORM).entityGenerator.generate({
   //   save: true,
