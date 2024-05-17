@@ -26,13 +26,14 @@ import { ApiModule } from './modules/api/api.module';
 import { RelationsService } from './relations/relations.service';
 import { EntityGenerator } from '@mikro-orm/entity-generator';
 import { UserController } from './modules/user/user.controller';
+import MikroOrmConfig from 'mikro-orm.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    MikroOrmModule.forRootAsync(),
+    MikroOrmModule.forRoot(MikroOrmConfig),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '../../files'),
       serveRoot: '/files',

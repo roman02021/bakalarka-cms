@@ -8,26 +8,6 @@ async function bootstrap() {
     cors: true,
   });
 
-  console.log('yo');
-
-  // await app.get(MikroORM).entityGenerator.generate({
-  //   save: true,
-  //   bidirectionalRelations: true,
-  //   identifiedReferences: true,
-  //   esmImport: true,
-  //   path: process.cwd() + '/my-entities',
-  //   entitySchema: true,
-  // });
-
-  // const migrator = app.get(MikroORM).getMigrator().up();
-  await app.get(MikroORM).getSchemaGenerator().ensureDatabase();
-
-  await app.get(MikroORM).getSchemaGenerator().updateSchema({
-    safe: true,
-  });
-
-  // await app.get(MikroORM).schema.
-
   app.useGlobalPipes(
     new ValidationPipe({
       exceptionFactory: (errors) => new BadRequestException(errors),

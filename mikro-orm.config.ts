@@ -3,7 +3,7 @@ import { Migrator } from '@mikro-orm/migrations';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { ConfigService } from '@nestjs/config';
 import 'dotenv/config';
-import { defineConfig } from '@mikro-orm/postgresql';
+import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 const configService = new ConfigService();
 const MikroOrmConfig: Options = {
@@ -16,6 +16,10 @@ const MikroOrmConfig: Options = {
   host: configService.get('DB_HOST'),
   port: configService.get('DB_PORT'),
   extensions: [Migrator],
+  metadataProvider: TsMorphMetadataProvider,
+  migrations: {
+    disableForeignKeys: false,
+  },
 };
 
 export default MikroOrmConfig;
