@@ -281,13 +281,14 @@ export class AttributeService {
               .del();
           }
         } else {
-          await trx('cms_attributes').where('id', attribute[0].id).del();
+          await trx('cms_attributes').where('id', attribute.id).del();
         }
       });
       return {
         message: `Attribute ${columnName} in ${collection} was deleted`,
       };
     } catch (error) {
+      console.log(error);
       return new HttpException('Something went wrong.', HttpStatus.BAD_REQUEST);
     }
   }
