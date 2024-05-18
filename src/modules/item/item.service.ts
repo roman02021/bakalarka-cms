@@ -341,7 +341,9 @@ export class ItemsService {
         );
 
         const fileAttributes = collectionAttributes.filter(
-          (collectionAttribute) => collectionAttribute.type === 'file',
+          (collectionAttribute) =>
+            collectionAttribute.type === 'file' ||
+            collectionAttribute.type === 'image',
         );
 
         await Promise.all(
