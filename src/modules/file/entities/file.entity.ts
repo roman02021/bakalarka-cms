@@ -46,7 +46,7 @@ export class File extends BaseEntity {
     this.createdBy = createdBy;
     this.parentFolder = parentFolder;
     this.fileSize = fileSize;
-    this.filePath = '/' + this.relativePath + this.name;
+    this.filePath = this.relativePath + '/' + this.name;
   }
 }
 
