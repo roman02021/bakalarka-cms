@@ -255,7 +255,7 @@ export class FileService {
     try {
       const file = await this.em.findOneOrFail(File, fileId);
       fs.rmSync(file.absolutePath);
-      this.em.removeAndFlush(file);
+      await this.em.removeAndFlush(file);
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
