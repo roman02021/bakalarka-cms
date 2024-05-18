@@ -587,7 +587,8 @@
             "id"
           ],
           "referencedTableName": "public.cms_folders",
-          "deleteRule": "cascade"
+          "deleteRule": "cascade",
+          "updateRule": "cascade"
         }
       },
       "nativeEnums": {}

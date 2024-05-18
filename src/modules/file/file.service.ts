@@ -85,6 +85,7 @@ export class FileService {
       });
       const insertedFolder = await this.em.insert(Folder, newFolder);
       mkdirSync(paths.absolutePath);
+      this.em.flush();
       return insertedFolder;
     } catch (error) {
       if (error.name === 'ForeignKeyConstraintViolationException') {
@@ -95,9 +96,6 @@ export class FileService {
       }
       throw new HttpException(error, HttpStatus.CONFLICT);
     }
-  }
-  async synchronizeVirtualFiles() {
-    return 'TODO';
   }
 
   async getFilesInRootFolder() {
@@ -244,18 +242,21 @@ export class FileService {
   async deleteFolder(folderId: number) {
     try {
       const folder = await this.em.findOneOrFail(Folder, folderId);
+      this.em.remove(folder);
       fs.rmSync(folder.absolutePath, { recursive: true });
-
-      await this.em.removeAndFlush(folder);
+      await this.em.flush();
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }
   }
   async deleteFile(fileId: number) {
     try {
+      console.log(fileId);
       const file = await this.em.findOneOrFail(File, fileId);
+      this.em.remove(file);
       fs.rmSync(file.absolutePath);
-      await this.em.removeAndFlush(file);
+
+      await this.em.flush();
     } catch (error) {
       throw new HttpException(error, HttpStatus.BAD_REQUEST);
     }

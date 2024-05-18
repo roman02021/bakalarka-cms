@@ -2,10 +2,14 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateAttributesDto } from './dto/attribute.dto';
 import { EntityManager, Knex } from '@mikro-orm/postgresql';
 import { Attribute } from '../attribute/entities/attribute.entity';
+import { RelationsService } from 'src/relations/relations.service';
 
 @Injectable()
 export class AttributeService {
-  constructor(private readonly em: EntityManager) {}
+  constructor(
+    private readonly em: EntityManager,
+    private readonly relationsService: RelationsService,
+  ) {}
   async addAttributesToCollection(
     collection: string,
     createAttributesDto: CreateAttributesDto,
@@ -198,14 +202,22 @@ export class AttributeService {
           table.integer(attribute.name).nullable();
         }
 
-        table.foreign(attribute.name).references('id').inTable('cms_files');
+        table
+          .foreign(attribute.name)
+          .references('id')
+          .inTable('cms_files')
+          .onDelete('SET NULL');
       } else if (attribute.type === 'file') {
         if (attribute.isRequired) {
           table.integer(attribute.name).notNullable();
         } else {
           table.integer(attribute.name).nullable();
         }
-        table.foreign(attribute.name).references('id').inTable('cms_files');
+        table
+          .foreign(attribute.name)
+          .references('id')
+          .inTable('cms_files')
+          .onDelete('SET NULL');
       } else if (attribute.type === 'boolean') {
         if (attribute.isRequired) {
           table.boolean(attribute.name).notNullable();
@@ -268,7 +280,13 @@ export class AttributeService {
               table.dropColumn(`${collection}_${referencedColumn}`);
             });
           } else if (relationType === 'manyToMany') {
-            await trx.schema.dropTable(`${collection}_${referencedTable}`);
+            const associationTable =
+              await this.relationsService.getAssociationTable(
+                trx,
+                collection,
+                referencedTable,
+              );
+            await trx.schema.dropTable(associationTable);
 
             const referencedCollection = await trx('cms_collections').where(
               'name',

@@ -27,7 +27,7 @@ export class File extends BaseEntity {
   @ManyToOne(() => User)
   createdBy: User;
 
-  @ManyToOne({ nullable: true, cascade: [Cascade.REMOVE] })
+  @ManyToOne({ nullable: true, deleteRule: 'cascade' })
   parentFolder: Folder;
 
   constructor(

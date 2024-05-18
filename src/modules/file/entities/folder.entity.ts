@@ -36,6 +36,7 @@ export class Folder extends BaseEntity {
   @OneToMany({
     entity: () => Folder,
     mappedBy: 'parentFolder',
+    cascade: [Cascade.REMOVE],
   })
   folders = new Collection<Folder>(this);
 }
