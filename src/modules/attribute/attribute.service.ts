@@ -116,9 +116,9 @@ export class AttributeService {
     try {
       if (attribute.type === 'text') {
         if (attribute.isRequired) {
-          table.string(attribute.name).notNullable();
+          table.text(attribute.name).notNullable();
         } else {
-          table.string(attribute.name).nullable();
+          table.text(attribute.name).nullable();
         }
       } else if (attribute.type === 'decimal') {
         if (attribute.isRequired) {
